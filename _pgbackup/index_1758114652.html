@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Electoral System - Landing Page Variations</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Google Fonts: Syne (Headings) & Lexend (Body) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+        <!-- Bootstrap Icons for placeholders -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <!-- Custom Tailwind Configuration -->
+        <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Lexend', 'sans-serif'],
+            display: ['Syne', 'sans-serif'],
+          }
+        }
+      }
+    }
+    </script>
+        <style>
+        /* A little extra CSS for smooth anchor links */
+        html { scroll-behavior: smooth; }
+    </style>
+    </head>
+    <body class="bg-slate-50 font-sans text-slate-700">
+        <!-- NAVIGATION to switch between variations -->
+        <div class="bg-slate-800 text-white p-3 text-center sticky top-0 z-50">
+            <p class="font-semibold">Layout Variations:  <a href="#variation-1" class="px-3 py-1 rounded-md hover:bg-slate-600">Corporate</a> |  <a href="#variation-2" class="px-3 py-1 rounded-md hover:bg-slate-600">Asymmetric</a> |  <a href="#variation-3" class="px-3 py-1 rounded-md hover:bg-slate-600">Dark Mode</a> </p>
+        </div>
+        <!-- =================================================================== -->
+        <!--          VARIATION 1: The "Corporate & Focused" Layout              -->
+        <!-- =================================================================== -->
+        <section id="variation-1" class="min-h-screen">
+            <header class="bg-white/90 backdrop-blur-lg sticky top-12 z-40 shadow-sm"> 
+                <nav class="flex items-center justify-between flex-wrap px-6 py-4 container mx-auto"> <a href="#" class="font-display font-bold text-2xl text-blue-600 uppercase flex items-center gap-2"> <!-- LOGO PLACEHOLDER --> <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"><i class="bi bi-shield-check text-blue-600"></i>
+                        </div>
+                    Commission </a> <a href="#" class="bg-blue-600 font-semibold inline-block px-6 py-2 rounded-md text-white hover:bg-blue-700 transition-colors shadow">Admin Login</a> 
+                </nav>                 
+            </header>
+            <main>
+                <div class="container mx-auto px-6 py-20 lg:py-28"> 
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"> 
+                        <div class="text-center lg:text-left"> 
+                            <p class="font-semibold text-blue-600 uppercase tracking-widest mb-2">Official Electoral Portal</p>
+                            <h1 class="font-display font-extrabold mb-6 text-5xl md:text-6xl text-slate-900 leading-tight">Integrity in Every Result.</h1> 
+                            <p class="mb-10 text-xl text-slate-600 leading-relaxed">
+                            The definitive platform for secure, real-time submission and transparent verification of polling unit results across the nation. </p> 
+                        </div>
+                        <div class="flex justify-center"> 
+                            <!-- IMAGE PLACEHOLDER -->
+                            <div class="w-full max-w-lg h-80 bg-slate-200 rounded-xl shadow-2xl flex items-center justify-center">
+                                <p class="text-slate-400">Compelling Image Placeholder</p>
+                            </div>
+                        </div>                         
+                    </div>                     
+                </div>
+                <div class="bg-white py-20">
+                    <div class="container mx-auto px-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                            <!-- Card 1: Submit Results -->
+                            <div class="border border-slate-200 rounded-lg p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                                <!-- ICON PLACEHOLDER -->
+                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"><i class="bi bi-file-earmark-arrow-up-fill text-3xl text-blue-600"></i>
+                                </div>
+                                <h2 class="font-display text-3xl font-bold text-slate-800 mb-3">Submit Results</h2>
+                                <p class="mb-6 text-slate-500">Authorized personnel can begin the secure, step-by-step process of entering polling unit data.</p><a href="#" class="bg-blue-600 font-semibold inline-block px-8 py-3 rounded-md text-white hover:bg-blue-700 transition-colors">Begin Data Entry</a>
+                            </div>
+                            <!-- Card 2: Admin Dashboard -->
+                            <div class="border border-slate-200 rounded-lg p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                                <!-- ICON PLACEHOLDER -->
+                                <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4"><i class="bi bi-speedometer2 text-3xl text-slate-600"></i>
+                                </div>
+                                <h2 class="font-display text-3xl font-bold text-slate-800 mb-3">View Dashboard</h2>
+                                <p class="mb-6 text-slate-500">Administrators can log in to access real-time analytics, verify submissions, and manage the system.</p><a href="#" class="bg-slate-700 font-semibold inline-block px-8 py-3 rounded-md text-white hover:bg-slate-800 transition-colors">Access Admin Portal</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+        <!-- =================================================================== -->
+        <!--          VARIATION 2: The "Modern & Asymmetric" Layout              -->
+        <!-- =================================================================== -->
+        <section id="variation-2" class="min-h-screen bg-slate-100 overflow-hidden">
+            <header class="bg-white/90 backdrop-blur-lg sticky top-12 z-40"> 
+                <nav class="flex items-center justify-between flex-wrap px-6 py-4 container mx-auto"> <a href="#" class="font-display font-bold text-2xl text-blue-600 uppercase flex items-center gap-2"> <!-- LOGO PLACEHOLDER --> <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"><i class="bi bi-shield-check text-blue-600"></i>
+                        </div>
+                    Commission </a> <a href="#" class="border-2 border-slate-800 font-semibold inline-block px-6 py-2 rounded-md text-slate-800 hover:bg-slate-800 hover:text-white transition-colors">Admin Login</a> 
+                </nav>                 
+            </header>
+            <main class="pt-20 pb-24 relative">
+                <div class="container mx-auto px-6">
+                    <div class="grid lg:grid-cols-5 gap-8 items-center">
+                        <div class="lg:col-span-3">
+                            <h1 class="font-display font-extrabold text-5xl md:text-7xl text-slate-900 leading-tight mb-6">A New Standard for Electoral Transparency.</h1>
+                            <p class="text-xl text-slate-600 leading-relaxed max-w-2xl">
+                           Leverage our robust digital framework to ensure every result is captured with precision, verified with confidence, and analyzed in real-time. </p>
+                        </div>
+                        <div class="lg:col-span-2 flex justify-center lg:justify-end relative">
+                            <div class="bg-white p-6 rounded-2xl shadow-2xl relative z-10 w-full max-w-sm">
+                                <!-- IMAGE PLACEHOLDER -->
+                                <div class="w-full h-96 bg-slate-200 rounded-xl flex items-center justify-center">
+                                    <p class="text-slate-400">Visual Placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <div class="relative">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="currentColor" version="1.1" xmlns="http://www.w3.org/2000/svg" height="120" width="100%" class="block text-white absolute bottom-full"> 
+                    <path d="M 0 0 V 100 L 100 0"/> 
+                </svg>
+            </div>
+            <section class="bg-white py-24">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="font-display text-4xl font-bold text-slate-800 mb-4">Choose Your Portal</h2>
+                    <p class="text-lg text-slate-500 max-w-2xl mx-auto mb-12">Select your designated access point to proceed.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Choice 1 -->
+                        <div class="bg-slate-50 border border-slate-200 p-8 rounded-lg text-left">
+                            <h3 class="font-display text-3xl font-bold text-blue-600 mb-3">Data Entry Portal</h3>
+                            <p class="text-slate-600 mb-6">For authorized clerks and officials to submit results directly from polling units. A valid access code is required.</p><a href="#" class="font-semibold text-blue-600">Proceed to Submission Form &rarr;</a>
+                        </div>
+                        <!-- Choice 2 -->
+                        <div class="bg-slate-50 border border-slate-200 p-8 rounded-lg text-left">
+                            <h3 class="font-display text-3xl font-bold text-slate-700 mb-3">Admin Analytics</h3>
+                            <p class="text-slate-600 mb-6">For system administrators and verified observers to monitor results, view analytics, and manage system integrity.</p><a href="#" class="font-semibold text-slate-700">Go to Admin Dashboard &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+        <!-- =================================================================== -->
+        <!--           VARIATION 3: The "Dark Mode & Immersive" Layout           -->
+        <!-- =================================================================== -->
+        <section id="variation-3" class="min-h-screen">
+            <div class="bg-slate-900 text-white relative">
+                <header class="absolute top-0 left-0 right-0 z-40"> 
+                    <nav class="flex items-center justify-between flex-wrap px-6 py-5 container mx-auto"> <a href="#" class="font-display font-bold text-2xl text-white uppercase flex items-center gap-2"> <!-- LOGO PLACEHOLDER --> <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center"><i class="bi bi-shield-check text-white"></i>
+                            </div>
+                        Commission </a> <a href="#" class="border-2 border-white font-semibold inline-block px-6 py-2 rounded-md text-white hover:bg-white hover:text-slate-900 transition-colors">Admin Login</a> 
+                    </nav>                     
+                </header>
+                <main class="relative z-10">
+                    <div class="container mx-auto px-6 py-32 lg:py-48 text-center">
+                        <h1 class="font-display font-extrabold text-5xl md:text-7xl mb-6 leading-tight">The Future of Election Reporting.</h1>
+                        <p class="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-10">
+                       Experience unparalleled efficiency and trust with our state-of-the-art digital platform for managing and verifying electoral data from the ground up. </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center"><a href="#" class="bg-blue-600 hover:bg-blue-500 inline-block px-8 py-4 rounded-md text-lg text-white font-semibold shadow-lg">Submit Polling Unit Results</a><a href="#" class="bg-slate-700 hover:bg-slate-600 inline-block px-8 py-4 rounded-md text-lg text-white font-semibold shadow-lg">Access Analytics</a> 
+                        </div>
+                    </div>
+                    <div class="relative -bottom-16 flex justify-center px-6">
+                        <!-- IMAGE PLACEHOLDER -->
+                        <div class="w-full max-w-4xl h-80 bg-slate-700 rounded-xl shadow-2xl flex items-center justify-center border-4 border-slate-800">
+                            <p class="text-slate-400">Dashboard Preview Image Placeholder</p>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            <section class="bg-white pt-32 pb-20">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-16">
+                        <h2 class="font-display font-bold text-4xl text-slate-900 mb-3">Two Portals, One Mission</h2>
+                        <p class="text-lg text-slate-500 max-w-2xl mx-auto">Whether you are submitting data or monitoring it, our system is designed for a seamless experience.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+                        <!-- Column 1 -->
+                        <div class="flex gap-6">
+                            <!-- ICON PLACEHOLDER -->
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"><i class="bi bi-pencil-square text-2xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-bold text-2xl text-slate-800 mb-2">For Data Entry Personnel</h3>
+                                <p class="text-slate-600">An intuitive, multi-step form guides you through the process, ensuring all required fields are captured accurately before submission.</p>
+                            </div>
+                        </div>
+                        <!-- Column 2 -->
+                        <div class="flex gap-6">
+                            <!-- ICON PLACEHOLDER -->
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"><i class="bi bi-grid-1x2-fill text-2xl text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-bold text-2xl text-slate-800 mb-2">For Administrators</h3>
+                                <p class="text-slate-600">A comprehensive dashboard provides a bird's-eye view of all incoming data, with powerful tools for verification, reporting, and analysis.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </body>
+</html>

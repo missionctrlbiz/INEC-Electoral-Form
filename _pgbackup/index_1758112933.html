@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Election Result Management System</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Heroicons via CDN for Icons -->
+        <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+        <!-- Custom Tailwind Configuration (Optional, for custom colors etc.) -->
+        <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#003366',
+              'brand-secondary': '#007BFF',
+              'brand-success': '#28A745',
+            }
+          }
+        }
+      }
+    </script>
+        <!-- Custom Styles (for things not easily done with Tailwind utilities) -->
+        <style>
+        /* A simple fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-step.active {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+    </head>
+    <body class="bg-gray-100 font-sans text-gray-800">
+        <!-- This is the main container. We will use JS to toggle which view is visible. -->
+        <div id="app-container">
+            <!-- =================================================================== -->
+            <!--                         LANDING PAGE (/)                            -->
+            <!-- View ID: landing-page                                               -->
+            <!-- =================================================================== -->
+            <div id="landing-page">
+                <header class="bg-brand-primary shadow-md">
+                    <div class="container mx-auto text-center py-6 text-white">
+                        <h1 class="text-3xl font-bold tracking-tight">Election Result Management System</h1>
+                        <p class="text-lg opacity-90">Independent National Electoral Commission</p>
+                    </div>
+                </header>
+                <main class="container mx-auto px-4 py-12 md:py-20">
+                    <div class="text-center mb-12">
+                        <h2 class="text-4xl font-bold text-gray-900">Welcome to the Election Result Portal</h2>
+                        <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">This secure platform allows authorized personnel to submit election results and administrators to view comprehensive election data.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        <!-- Submit Results Card -->
+                        <div class="bg-white rounded-lg shadow-lg border-t-4 border-brand-secondary transform hover:-translate-y-2 transition-transform duration-300">
+                            <div class="p-8 text-center flex flex-col h-full">
+                                <div class="mx-auto bg-brand-secondary text-white w-16 h-16 rounded-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-2xl font-bold mt-6">Submit Election Results</h3>
+                                <p class="mt-2 text-gray-600">Enter polling unit results through our secure 4-step process.</p>
+                                <ul class="text-left space-y-2 mt-6 text-gray-700">
+                                    <!-- List items... -->
+                                </ul>
+                                <div class="mt-auto pt-6">
+                                    <button onclick="switchView('data-entry-page')" class="w-full bg-brand-secondary text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">Begin Data Entry</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Admin Dashboard Card -->
+                        <div class="bg-white rounded-lg shadow-lg border-t-4 border-brand-success transform hover:-translate-y-2 transition-transform duration-300">
+                            <div class="p-8 text-center flex flex-col h-full">
+                                <div class="mx-auto bg-brand-success text-white w-16 h-16 rounded-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-2xl font-bold mt-6">Admin Dashboard</h3>
+                                <p class="mt-2 text-gray-600">View comprehensive election results and analytics.</p>
+                                <ul class="text-left space-y-2 mt-6 text-gray-700">
+                                    <!-- List items... -->
+                                </ul>
+                                <div class="mt-auto pt-6">
+                                    <button onclick="switchView('admin-dashboard-page')" class="w-full bg-brand-success text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">Admin Login</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            <!-- =================================================================== -->
+            <!--                    DATA ENTRY FORM (/entry)                         -->
+            <!-- View ID: data-entry-page                                            -->
+            <!-- =================================================================== -->
+            <div id="data-entry-page" class="hidden">
+                <header class="bg-brand-primary shadow-md">
+                    <div class="container mx-auto text-center py-6 text-white">
+                        <h1 class="text-3xl font-bold tracking-tight">Election Result Entry Portal</h1>
+                    </div>
+                </header>
+                <main class="container mx-auto px-4 py-12">
+                    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-10">
+                        <!-- Stepper -->
+                        <div id="stepper" class="flex justify-between items-center mb-10">
+                            <div class="step active text-center" data-step-name="Location">
+                                <div class="step-icon mx-auto w-10 h-10 rounded-full bg-brand-secondary text-white flex items-center justify-center font-bold text-lg">1</div>
+                                <div class="mt-2 text-sm text-gray-600">Location</div>
+                            </div>
+                            <div class="flex-auto border-t-2 border-gray-300 mx-4"></div>
+                            <div class="step text-center" data-step-name="Statistics">
+                                <div class="step-icon mx-auto w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg">2</div>
+                                <div class="mt-2 text-sm text-gray-600">Statistics</div>
+                            </div>
+                            <div class="flex-auto border-t-2 border-gray-300 mx-4"></div>
+                            <div class="step text-center" data-step-name="Scores">
+                                <div class="step-icon mx-auto w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg">3</div>
+                                <div class="mt-2 text-sm text-gray-600">Scores</div>
+                            </div>
+                            <div class="flex-auto border-t-2 border-gray-300 mx-4"></div>
+                            <div class="step text-center" data-step-name="Review">
+                                <div class="step-icon mx-auto w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg">4</div>
+                                <div class="mt-2 text-sm text-gray-600">Review</div>
+                            </div>
+                        </div>
+                        <form id="electionForm" method="POST" action="submit_result.php" enctype="multipart/form-data">
+                            <!-- <!-- PHP: Hidden input for user ID -->                             -->
+                            <input type="hidden" name="user_id" value="<!-- <?php echo $user_id; ?> -->">
+                            <!-- Step 1: Location -->
+                            <div class="form-step active" data-step="1">
+                                <h3 class="text-2xl font-bold mb-6">Step 1: Polling Unit Information</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="state" class="block text-sm font-medium text-gray-700">State</label>
+                                        <select id="state" name="state" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                            <!-- PHP: Options would be dynamically loaded -->
+                                            <option value="Lagos">Lagos</option>
+                                        </select>
+                                    </div>
+                                    <!-- Other location fields... -->
+                                </div>
+                                <div class="mt-8 flex justify-end">
+                                    <button type="button" class="next-btn bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Next →</button>
+                                </div>
+                            </div>
+                            <!-- Step 2: Statistics -->
+                            <div class="form-step hidden" data-step="2">
+                                <h3 class="text-2xl font-bold mb-6">Step 2: Voter & Ballot Statistics</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Statistic fields... -->
+                                </div>
+                                <div class="mt-8 flex justify-between">
+                                    <button type="button" class="back-btn bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">← Back</button>
+                                    <button type="button" class="next-btn bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Next →</button>
+                                </div>
+                            </div>
+                            <!-- Step 3: Scores -->
+                            <div class="form-step hidden" data-step="3">
+                                <h3 class="text-2xl font-bold mb-6">Step 3: Political Party Scores</h3>
+                                <!-- Score fields... -->
+                                <div class="mt-8 flex justify-between">
+                                    <button type="button" class="back-btn bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">← Back</button>
+                                    <button type="button" class="next-btn bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Next →</button>
+                                </div>
+                            </div>
+                            <!-- Step 4: Review -->
+                            <div class="form-step hidden" data-step="4">
+                                <h3 class="text-2xl font-bold mb-6">Step 4: Review and Submit</h3>
+                                <div id="review-section" class="space-y-4 bg-gray-50 p-4 rounded-md border">
+                                    <!-- Review content will be populated by JS -->
+                                </div>
+                                <div class="mt-6">
+                                    <label for="result_sheet" class="block text-sm font-medium text-gray-700">Upload Scanned Result Sheet</label>
+                                    <input class="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" type="file" id="result_sheet" name="result_sheet" required>
+                                </div>
+                                <div class="mt-8 flex justify-between">
+                                    <button type="button" class="back-btn bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">← Back</button>
+                                    <button type="submit" class="bg-brand-success text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700">Submit Result</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </main>
+            </div>
+            <!-- =================================================================== -->
+            <!--                        ADMIN DASHBOARD                              -->
+            <!-- View ID: admin-dashboard-page                                       -->
+            <!-- =================================================================== -->
+            <div id="admin-dashboard-page" class="hidden">
+                <div class="flex h-screen bg-gray-200">
+                    <!-- Sidebar -->
+                    <nav class="w-64 bg-brand-primary text-white flex flex-col">
+                        <div class="p-4 text-2xl font-bold border-b border-blue-800">Election Admin</div>
+                        <ul class="flex flex-col py-4 space-y-1 flex-grow">
+                            <li>
+                                <a href="#" class="admin-nav-link active" data-view="dashboard-view"><svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="..."></path>
+                                    </svg>Dashboard</a>
+                            </li>
+                            <li>
+                                <a href="#" class="admin-nav-link" data-view="results-view"><svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="..."></path>
+                                    </svg>Detailed Results</a>
+                            </li>
+                            <li>
+                                <a href="#" class="admin-nav-link" data-view="users-view"><svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="..."></path>
+                                    </svg>User Management</a>
+                            </li>
+                        </ul>
+                        <div class="p-4 border-t border-blue-800"><a href="#" class="flex items-center p-2 rounded-lg text-blue-200 hover:bg-blue-800 hover:text-white"> <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="..."></path>
+                                </svg>Logout </a>
+                        </div>
+                    </nav>
+                    <!-- Main Content -->
+                    <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+                        <!-- Header -->
+                        <header class="flex justify-between items-center mb-8">
+                            <!-- Search Bar -->
+                            <!-- User Profile -->
+                        </header>
+                        <!-- Admin Views Container -->
+                        <div>
+                            <!-- Dashboard View -->
+                            <div id="dashboard-view" class="admin-view">
+                                <h2 class="text-3xl font-bold mb-6">Election Dashboard</h2>
+                                <!-- KPI Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                                    <!-- KPI Card Example -->
+                                    <div class="bg-white p-5 rounded-lg shadow border-l-4 border-brand-secondary">
+                                        <p class="text-sm text-gray-500 font-medium">Total Results Submitted</p>
+                                        <p class="text-3xl font-bold mt-1">1,402 / 176,846</p>
+                                    </div>
+                                    <!-- ... more cards ... -->
+                                </div>
+                                <!-- Charts -->
+                                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
+                                    <div class="lg:col-span-3 bg-white p-5 rounded-lg shadow">
+                                        <p>Chart: Results Over Time</p>
+                                    </div>
+                                    <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow">
+                                        <p>Chart: Vote Share</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Results View -->
+                            <div id="results-view" class="admin-view hidden">
+                                <h2 class="text-3xl font-bold mb-6">All Submitted Results</h2>
+                                <!-- Filters and Table... -->
+                            </div>
+                            <!-- Users View -->
+                            <div id="users-view" class="admin-view hidden">
+                                <h2 class="text-3xl font-bold mb-6">User Management</h2>
+                                <!-- User Table... -->
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+        <script>
+        // Simple View Switcher
+        function switchView(viewId) {
+            document.querySelectorAll('#app-container > div').forEach(div => div.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Multi-Step Form Logic ---
+            const form = document.getElementById('electionForm');
+            if (form) {
+                const steps = Array.from(form.querySelectorAll('.form-step'));
+                const stepperIcons = Array.from(document.querySelectorAll('#stepper .step'));
+                let currentStep = 0;
+
+                const updateForm = () => {
+                    steps.forEach((step, index) => {
+                        step.classList.toggle('active', index === currentStep);
+                        step.classList.toggle('hidden', index !== currentStep);
+                    });
+                    
+                    stepperIcons.forEach((step, index) => {
+                        const icon = step.querySelector('.step-icon');
+                        if (index < currentStep) {
+                            icon.classList.remove('bg-gray-300', 'bg-brand-secondary');
+                            icon.classList.add('bg-brand-success', 'text-white');
+                        } else if (index === currentStep) {
+                            icon.classList.remove('bg-gray-300', 'bg-brand-success');
+                            icon.classList.add('bg-brand-secondary', 'text-white');
+                        } else {
+                            icon.classList.remove('bg-brand-secondary', 'bg-brand-success', 'text-white');
+                            icon.classList.add('bg-gray-300');
+                        }
+                    });
+                };
+                
+                form.addEventListener('click', (e) => {
+                    if (e.target.matches('.next-btn')) {
+                        if (currentStep < steps.length - 1) {
+                            currentStep++;
+                            updateForm();
+                        }
+                    } else if (e.target.matches('.back-btn')) {
+                        if (currentStep > 0) {
+                            currentStep--;
+                            updateForm();
+                        }
+                    }
+                });
+                updateForm();
+            }
+
+            // --- Admin Dashboard Navigation ---
+            const adminNavLinks = document.querySelectorAll('.admin-nav-link');
+            if (adminNavLinks.length > 0) {
+                adminNavLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const viewId = link.getAttribute('data-view');
+                        
+                        // Update active link
+                        adminNavLinks.forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                        
+                        // Show correct view
+                        document.querySelectorAll('.admin-view').forEach(view => view.classList.add('hidden'));
+                        document.getElementById(viewId).classList.remove('hidden');
+                    });
+                });
+            }
+        });
+    </script>
+    </body>
+</html>

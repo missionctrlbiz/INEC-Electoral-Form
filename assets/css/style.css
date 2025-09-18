@@ -1,0 +1,15 @@
+/* Custom styles for the stepper */
+.step.active .step-icon {
+    @apply bg-inec-green text-white border-inec-green;
+}
+.step.completed .step-icon {
+    @apply bg-green-500 text-white border-green-500;
+}
+.connector.completed {
+    @apply bg-green-500;
+}
+
+/* Custom styles for the admin sidebar */
+.sidebar .nav-link.active {
+    @apply bg-inec-green text-white;
+}
