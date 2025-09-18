@@ -30,7 +30,7 @@
             <!-- Sidebar Navigation -->
             <aside class="w-64 bg-slate-800 text-white flex flex-col">
                 <div class="p-6 text-center border-b border-slate-700">
-                    <a href="dashboard.php"><img src="../INEC-Logo.png" alt="INEC Logo" class="h-14 w-auto mx-auto"></a>
+                    <a href="dashboard.php"><img src="../assets/images/INEC-Admin-Logo.png" alt="INEC Logo" class="h-14 w-auto mx-auto"></a>
                 </div>
                 <nav class="flex-1 px-4 py-4"><a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors" href="dashboard.php"><i class="bi bi-speedometer2 mr-3 text-lg"></i> Dashboard</a><a class="nav-link active flex items-center p-3 rounded-lg font-semibold" href="results.php"><i class="bi bi-table mr-3 text-lg"></i> Detailed Results</a><a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="users.php"><i class="bi bi-people mr-3 text-lg"></i> User Management</a>
                 </nav>
