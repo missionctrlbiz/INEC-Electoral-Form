@@ -1,63 +1,164 @@
-<?php require_once '../includes/admin_header.php'; ?>
+<?php
+require_once '../core/db_connect.php';
+// require_admin(); // Protect the page
+
+// --- DATA FETCHING FOR KPI CARDS ---
+$total_results_query = $conn->query("SELECT COUNT(id) as total FROM results");
+$total_results = $total_results_query->fetch_assoc()['total'] ?? 0;
+
+$total_voters_query = $conn->query("SELECT SUM(accredited_voters) as total FROM results");
+$total_voters = $total_voters_query->fetch_assoc()['total'] ?? 0;
+
+$pending_results_query = $conn->query("SELECT COUNT(id) as total FROM results WHERE status = 'pending'");
+$pending_results = $pending_results_query->fetch_assoc()['total'] ?? 0;
+
+$flagged_results_query = $conn->query("SELECT COUNT(id) as total FROM results WHERE status = 'flagged'");
+$flagged_results = $flagged_results_query->fetch_assoc()['total'] ?? 0;
+
+// --- DATA FETCHING FOR CHARTS ---
+$party_scores_query = $conn->query("
+    SELECT pp.acronym, SUM(ps.score) as total_score
+    FROM party_scores ps
+    JOIN political_parties pp ON ps.party_id = pp.id
+    GROUP BY pp.acronym
+    ORDER BY total_score DESC
+");
+$party_data = [];
+if ($party_scores_query) {
+    while($row = $party_scores_query->fetch_assoc()) {
+        $party_data[] = $row;
+    }
+}
+$party_data_json = json_encode($party_data);
+
+// --- DATA FETCHING FOR RECENT SUBMISSIONS TABLE ---
+$recent_submissions_query = $conn->query("
+    SELECT pu.name as pu_name, l.name as lga_name, s.name as state_name, r.status
+    FROM results r
+    JOIN polling_units pu ON r.polling_unit_id = pu.id
+    JOIN wards w ON pu.ward_id = w.id
+    JOIN lgas l ON w.lga_id = l.id
+    JOIN states s ON l.state_id = s.id
+    ORDER BY r.submitted_at DESC
+    LIMIT 5
+");
+
+require_once '../includes/admin_header.php'; 
+?>
 
 <header class="flex justify-between items-center mb-8">
     <h1 class="font-display text-3xl font-bold text-gray-800">Dashboard</h1>
     <div class="flex items-center gap-4">
-        <span class="font-semibold text-slate-600">Welcome, Admin!</span>
-        <!-- Updated path for the avatar placeholder -->
+        <span class="font-semibold text-slate-600">Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?>!</span>
         <img src="../assets/images/favicon.webp" class="w-10 h-10 rounded-full" alt="User Avatar">
     </div>
 </header>
 
 <!-- KPI Cards Grid -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-inec-green"><h4 class="text-gray-500 font-semibold">Total Results Submitted</h4><p class="text-3xl font-bold mt-1">1,402</p></div>
-    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500"><h4 class="text-gray-500 font-semibold">Accredited Voters</h4><p class="text-3xl font-bold mt-1">250,678</p></div>
-    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-500"><h4 class="text-gray-500 font-semibold">Pending Review</h4><p class="text-3xl font-bold mt-1">15</p></div>
-    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-inec-red"><h4 class="text-gray-500 font-semibold">Flagged for Review</h4><p class="text-3xl font-bold mt-1">3</p></div>
+    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-inec-green"><h4 class="text-gray-500 font-semibold">Total Results Submitted</h4><p class="text-3xl font-bold mt-1"><?php echo number_format($total_results); ?></p></div>
+    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500"><h4 class="text-gray-500 font-semibold">Accredited Voters</h4><p class="text-3xl font-bold mt-1"><?php echo number_format($total_voters); ?></p></div>
+    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-500"><h4 class="text-gray-500 font-semibold">Pending Review</h4><p class="text-3xl font-bold mt-1"><?php echo number_format($pending_results); ?></p></div>
+    <div class="bg-white rounded-lg shadow p-5 border-l-4 border-inec-red"><h4 class="text-gray-500 font-semibold">Flagged for Review</h4><p class="text-3xl font-bold mt-1"><?php echo number_format($flagged_results); ?></p></div>
 </div>
 
 <!-- Charts Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
+<div id="charts-container" class="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8" data-chart-data='<?php echo htmlspecialchars($party_data_json, ENT_QUOTES, 'UTF-8'); ?>'>
     <div class="lg:col-span-3 bg-white rounded-lg shadow p-5">
-        <h3 class="font-display font-bold text-lg mb-4">Results Submitted Over Time</h3>
-        <div class="bg-slate-100 h-64 flex items-center justify-center text-gray-500 rounded">Line Chart Placeholder</div>
+        <h3 class="font-display font-bold text-lg mb-4">Overall Party Results</h3>
+        <div class="relative h-64"><canvas id="partyResultsChart"></canvas></div>
     </div>
     <div class="lg:col-span-2 bg-white rounded-lg shadow p-5">
         <h3 class="font-display font-bold text-lg mb-4">Vote Share Distribution</h3>
-        <div class="bg-slate-100 h-64 flex items-center justify-center text-gray-500 rounded">Doughnut Chart Placeholder</div>
+        <div class="relative h-64"><canvas id="voteShareChart"></canvas></div>
     </div>
 </div>
 
 <!-- Recent Submissions Table -->
 <div class="bg-white rounded-lg shadow mt-8">
-    <div class="p-5 border-b border-slate-200">
-        <h3 class="font-display font-bold text-lg">Recent Submissions</h3>
-    </div>
+    <div class="p-5 border-b border-slate-200"><h3 class="font-display font-bold text-lg">Recent Submissions</h3></div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-gray-500">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                <tr>
-                    <th class="px-6 py-3">Polling Unit</th><th class="px-6 py-3">LGA</th><th class="px-6 py-3">State</th><th class="px-6 py-3">Time</th><th class="px-6 py-3">Status</th>
-                </tr>
-            </thead>
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-6 py-3">Polling Unit</th><th class="px-6 py-3">LGA</th><th class="px-6 py-3">State</th><th class="px-6 py-3">Status</th></tr></thead>
             <tbody>
-                <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-6 py-4 font-medium">Town Hall 003</td><td class="px-6 py-4">Kano Municipal</td><td class="px-6 py-4">Kano</td><td class="px-6 py-4">2 mins ago</td>
-                    <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Pending</span></td>
-                </tr>
-                 <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-6 py-4 font-medium">FAGBAYI ST. (BY HOUSE 9)</td><td class="px-6 py-4">Lagos Mainland</td><td class="px-6 py-4">Lagos</td><td class="px-6 py-4">5 mins ago</td>
-                    <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Verified</span></td>
-                </tr>
+                <?php if ($recent_submissions_query && $recent_submissions_query->num_rows > 0): ?>
+                    <?php while($row = $recent_submissions_query->fetch_assoc()): ?>
+                        <tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-slate-800"><?php echo htmlspecialchars($row['pu_name']); ?></td><td class="px-6 py-4"><?php echo htmlspecialchars($row['lga_name']); ?></td><td class="px-6 py-4"><?php echo htmlspecialchars($row['state_name']); ?></td><td class="px-6 py-4"><?php if ($row['status'] === 'verified') { echo '<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Verified</span>'; } elseif ($row['status'] === 'flagged') { echo '<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Flagged</span>'; } else { echo '<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Pending</span>'; } ?></td></tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr class="bg-white border-b"><td colspan="4" class="px-6 py-4 text-center text-slate-500">No recent submissions found.</td></tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- This script makes sure the correct sidebar link is highlighted -->
 <script>
-    document.querySelector('.nav-link[href="dashboard.php"]').classList.add('active');
+    document.addEventListener('DOMContentLoaded', () => {
+        // Sidebar active link highlighter
+        document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.href.includes('dashboard.php')) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Chart rendering logic
+        const chartsContainer = document.getElementById('charts-container');
+        const barCanvas = document.getElementById('partyResultsChart');
+        const doughnutCanvas = document.getElementById('voteShareChart');
+
+        if (typeof Chart === 'undefined' || !barCanvas || !doughnutCanvas || !chartsContainer) {
+            console.error('Chart.js or canvas elements are missing.');
+            return;
+        }
+
+        try {
+            const chartDataString = chartsContainer.dataset.chartData;
+            const partyData = JSON.parse(chartDataString);
+
+            if (!partyData || partyData.length === 0) {
+                 barCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available to display.</p>';
+                 doughnutCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available to display.</p>';
+                 return;
+            }
+
+            const labels = partyData.map(data => data.acronym);
+            const scores = partyData.map(data => data.total_score);
+
+            new Chart(barCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Votes', data: scores,
+                        backgroundColor: 'rgba(0, 106, 78, 0.7)',
+                        borderColor: 'rgba(0, 106, 78, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+            });
+
+            new Chart(doughnutCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Vote Share', data: scores,
+                        backgroundColor: ['#006A4E', '#D40028', '#3B82F6', '#F59E0B', '#6D28D9'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+        } catch (e) {
+            console.error('Error initializing charts:', e);
+            barCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center flex items-center justify-center h-full">Error: Could not render chart data.</p>';
+        }
+    });
 </script>
 
 <?php require_once '../includes/admin_footer.php'; ?>
