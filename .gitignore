@@ -1,0 +1,10 @@
+# Composer dependencies
+/vendor/
+
+# Environment variables (contains secret keys!)
+.env
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
