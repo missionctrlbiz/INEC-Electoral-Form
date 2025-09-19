@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userModal = document.getElementById('user-modal');
     const deleteModal = document.getElementById('delete-modal');
     const viewModal = document.getElementById('view-modal');
+    const notificationModal = document.getElementById('notification-modal'); // New modal
     
     const userForm = document.getElementById('user-form');
     const modalTitle = document.getElementById('modal-title');
@@ -13,11 +14,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const showModal = (modal) => modal.classList.remove('hidden');
     const hideModal = (modal) => modal.classList.add('hidden');
 
-    // --- Dynamic Form Fields Logic ---
+    // --- START: NEW NOTIFICATION MODAL LOGIC ---
+    const notificationIcon = document.getElementById('notification-icon');
+    const notificationTitle = document.getElementById('notification-title');
+    const notificationMessage = document.getElementById('notification-message');
+    const notificationCloseBtn = document.getElementById('notification-close-btn');
+
+    /**
+     * Displays a custom notification modal.
+     * @param {string} type - 'success' or 'error'.
+     * @param {string} title - The title of the message.
+     * @param {string} message - The main message content.
+     */
+    function showNotification(type, title, message) {
+        // Set content
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+
+        // Set styles based on type
+        if (type === 'success') {
+            notificationIcon.innerHTML = `<i class="bi bi-check2-circle text-6xl text-green-600"></i>`;
+            notificationIcon.className = 'w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5';
+            notificationCloseBtn.className = 'bg-inec-green text-white font-semibold w-full py-3 rounded-lg';
+        } else { // error
+            notificationIcon.innerHTML = `<i class="bi bi-x-circle text-6xl text-red-600"></i>`;
+            notificationIcon.className = 'w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5';
+            notificationCloseBtn.className = 'bg-inec-red text-white font-semibold w-full py-3 rounded-lg';
+        }
+        showModal(notificationModal);
+    }
+
+    notificationCloseBtn.addEventListener('click', () => hideModal(notificationModal));
+    // --- END: NEW NOTIFICATION MODAL LOGIC ---
+
+    // --- Dynamic Form Fields Logic (Unchanged) ---
     const roleSelect = document.getElementById('role');
     const clerkFields = document.getElementById('clerk-fields');
     const adminFields = document.getElementById('admin-fields');
-
     function toggleRoleFields() {
         const isClerk = roleSelect.value === 'clerk';
         clerkFields.style.display = isClerk ? '' : 'none';
@@ -43,14 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.edit-user-btn').forEach(button => {
         button.addEventListener('click', async () => {
             const userId = button.dataset.userId;
-            
-            // Fetch user data from the server
             const response = await fetch(`api_users.php?action=get&user_id=${userId}`);
             const data = await response.json();
 
             if (data.success) {
                 const user = data.user;
-                // Populate the form
                 userForm.reset();
                 userIdInput.value = user.id;
                 modalTitle.textContent = 'Edit User';
@@ -67,12 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleRoleFields();
                 showModal(userModal);
             } else {
-                alert(data.message);
+                // MODIFICATION: Use custom notification instead of alert()
+                showNotification('error', 'Fetch Error', data.message);
             }
         });
     });
     
-    // --- Show "View User" Modal ---
+    // --- Show "View User" Modal (Unchanged) ---
     document.querySelectorAll('.view-user-btn').forEach(button => {
         button.addEventListener('click', async () => {
             const userId = button.dataset.userId;
@@ -85,11 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 let statusBadge = user.status === 'active' 
                     ? `<span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">Active</span>`
                     : `<span class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">Inactive</span>`;
-                
                 let roleBadge = user.role === 'admin' 
                     ? `<span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">Admin</span>`
                     : `<span class="bg-slate-100 text-slate-800 text-sm font-medium px-3 py-1 rounded-full">Clerk</span>`;
-                
                 let puInfo = user.role === 'clerk' ? `
                     <div class="flex justify-between py-2 border-b">
                         <span class="font-medium text-slate-500">Polling Unit</span>
@@ -111,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Show "Delete User" Modal ---
+    // --- Show "Delete User" Modal (Unchanged) ---
     let userIdToDelete = null;
     document.querySelectorAll('.delete-user-btn').forEach(button => {
         button.addEventListener('click', () => {
@@ -124,19 +153,21 @@ document.addEventListener('DOMContentLoaded', () => {
     userForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(userForm);
-        formData.append('action', 'save'); // Add action for the API
+        formData.append('action', 'save');
 
-        const response = await fetch('api_users.php', {
-            method: 'POST',
-            body: formData
-        });
+        const response = await fetch('api_users.php', { method: 'POST', body: formData });
         const result = await response.json();
 
         if (result.success) {
             hideModal(userModal);
-            window.location.reload();
+            // MODIFICATION: Use custom notification and only reload page on success
+            showNotification('success', 'Success!', result.message);
+            notificationCloseBtn.addEventListener('click', () => {
+                location.reload();
+            }, { once: true }); // Reload only after user clicks "OK"
         } else {
-            alert(`Error: ${result.message}`);
+            // MODIFICATION: Use custom notification for failure
+            showNotification('error', 'Save Failed', result.message);
         }
     });
 
@@ -147,22 +178,25 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('action', 'delete');
             formData.append('user_id', userIdToDelete);
 
-            const response = await fetch('api_users.php', {
-                method: 'POST',
-                body: formData
-            });
+            const response = await fetch('api_users.php', { method: 'POST', body: formData });
             const result = await response.json();
 
             if (result.success) {
                 hideModal(deleteModal);
-                window.location.reload();
+                 // MODIFICATION: Use custom notification and only reload page on success
+                showNotification('success', 'Success!', result.message);
+                notificationCloseBtn.addEventListener('click', () => {
+                    location.reload();
+                }, { once: true });
             } else {
-                alert(`Error: ${result.message}`);
+                 // MODIFICATION: Use custom notification for failure
+                hideModal(deleteModal); // Hide the delete confirmation first
+                showNotification('error', 'Delete Failed', result.message);
             }
         }
     });
 
-    // --- Close Modal Buttons ---
+    // --- Close Modal Buttons (Unchanged) ---
     document.getElementById('modal-close-btn').addEventListener('click', () => hideModal(userModal));
     document.getElementById('view-modal-close-btn').addEventListener('click', () => hideModal(viewModal));
     document.getElementById('cancel-delete-btn').addEventListener('click', () => hideModal(deleteModal));

@@ -172,6 +172,17 @@ $polling_units = $polling_units_query->fetch_all(MYSQLI_ASSOC);
         </div>
     </div>
 </div>
+<!-- Notification Modal (for Success/Error messages) -->
+<div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-8 text-center w-full max-w-sm">
+        <div id="notification-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5">
+            <!-- Icon will be set by JS -->
+        </div>
+        <h2 id="notification-title" class="font-display font-bold text-2xl text-slate-800 mb-2"></h2>
+        <p id="notification-message" class="text-slate-600 mb-8"></p>
+        <button id="notification-close-btn" class="bg-slate-700 text-white font-semibold w-full py-3 rounded-lg">OK</button>
+    </div>
+</div>
 
 <script src="../assets/js/users.js"></script>
 
