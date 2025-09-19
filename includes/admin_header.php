@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="icon" type="image/webp" href="../assets/images/favicon.webp">
     
-    <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
@@ -31,17 +30,22 @@
       }
     }
     </script>
+    <style>
+        .sidebar .nav-link.active { @apply bg-inec-green text-white; }
+    </style>
 </head>
 <body class="bg-slate-100 font-sans">
     <div class="flex min-h-screen">
         <aside class="w-64 bg-slate-800 text-white flex flex-col">
             <div class="p-6 text-center border-b border-slate-700">
-                <a href="dashboard.php"><img src="../assets/images/INEC-Admin-Logo.png" alt="INEC Logo" class="h-14 w-auto mx-auto"></a>
+                <a href="dashboard.php"><img src="../assets/images/INEC-Admin-Logo.png" alt="INEC Admin Logo" class="h-14 w-auto mx-auto"></a>
             </div>
             <nav class="flex-1 px-4 py-4">
                 <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="dashboard.php"><i class="bi bi-speedometer2 mr-3 text-lg"></i> Dashboard</a>
-                <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="results.php"><i class="bi bi-table mr-3 text-lg"></i> Detailed Results</a>
+                <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="results-analysis.php"><i class="bi bi-table mr-3 text-lg"></i> Results Analysis</a>
+                <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="national-summary.php"><i class="bi bi-bar-chart-line-fill mr-3 text-lg"></i> National Summary</a>
                 <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="users.php"><i class="bi bi-people mr-3 text-lg"></i> User Management</a>
+                <a class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors mt-2" href="parties.php"><i class="bi bi-flag mr-3 text-lg"></i> Political Parties</a>
             </nav>
             <div class="p-4 border-t border-slate-700">
                 <a class="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors" href="logout.php"><i class="bi bi-box-arrow-left mr-3 text-lg"></i> Logout</a>

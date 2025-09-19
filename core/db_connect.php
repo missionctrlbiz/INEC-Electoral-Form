@@ -12,8 +12,6 @@ if ($conn->connect_error) {
 }
 
 // --- ROBUST SESSION MANAGEMENT ---
-// This checks if a session has already been started before starting a new one.
-// This prevents "headers already sent" errors and makes session handling reliable.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -26,7 +24,36 @@ function is_logged_in() {
 function require_login() {
     if (!is_logged_in()) {
         $_SESSION['error_message'] = "You must be logged in to access that page.";
+        // This function is called from the root directory, so this path is correct.
         header("Location: polling-unit-login.php");
         exit;
     }
 }
+
+// --- START: ADDED THE MISSING FUNCTION ---
+/**
+ * Protects an admin page.
+ * Redirects to the admin login page if the user is not a logged-in administrator.
+ */
+function require_admin() {
+    // The condition checks three things:
+    // 1. Is a user logged in at all?
+    // 2. Is their session role set?
+    // 3. Is their role specifically 'admin'?
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        
+        // For security, if the check fails, destroy any potentially invalid session.
+        session_destroy();
+
+        // Start a new session just to pass an error message to the login page.
+        session_start();
+        $_SESSION['error_message'] = "Admin access required. Please log in.";
+        
+        // This function is called from scripts inside the /admin/ folder,
+        // so this relative path will correctly redirect to /admin/index.php
+        header("Location: index.php");
+        exit;
+    }
+}
+// --- END: ADDED THE MISSING FUNCTION ---
+?>

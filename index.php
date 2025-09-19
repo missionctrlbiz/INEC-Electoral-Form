@@ -13,7 +13,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
 }
 // Redirect logged-in admins to their dashboard
 if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-    header('Location: admin/dashboard.php');
+    header('Location: admin/dashboard');
     exit;
 }
 
