@@ -22,7 +22,7 @@
         <div class="container mx-auto px-6"> 
             <header class="sticky top-0 z-40 bg-white"> 
                 <nav class="flex items-center justify-between flex-wrap py-4 border-b border-slate-200"> <a href="index.php" class="flex items-center">  <img src="assets/images/INEC-Logo.png" alt="INEC Logo" class="h-14 w-auto">  </a> 
-                    <div class="flex items-center gap-4"> <a href="#learn" class="bg-slate-100 font-semibold inline-block px-6 py-3 rounded-lg text-slate-800 hover:bg-slate-200 transition-colors">Learn More</a> <a href="#start" class="bg-inec-green font-semibold inline-block px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity shadow-md">Get Started</a> 
+                    <div class="flex items-center gap-4"> <a href="#learn" class="bg-slate-100 font-semibold inline-block px-6 py-3 rounded-lg text-slate-800 hover:bg-slate-200 transition-colors">Wow More</a> <a href="#start" class="bg-inec-green font-semibold inline-block px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity shadow-md">Get Started</a> 
                     </div>                     
                 </nav>                 
             </header>
