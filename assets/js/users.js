@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userModal = document.getElementById('user-modal');
     const deleteModal = document.getElementById('delete-modal');
     const viewModal = document.getElementById('view-modal');
-    const notificationModal = document.getElementById('notification-modal'); // New modal
+    const notificationModal = document.getElementById('notification-modal');
     
     const userForm = document.getElementById('user-form');
     const modalTitle = document.getElementById('modal-title');
@@ -14,50 +14,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const showModal = (modal) => modal.classList.remove('hidden');
     const hideModal = (modal) => modal.classList.add('hidden');
 
-    // --- START: NEW NOTIFICATION MODAL LOGIC ---
+    // --- Notification Modal Logic ---
     const notificationIcon = document.getElementById('notification-icon');
     const notificationTitle = document.getElementById('notification-title');
     const notificationMessage = document.getElementById('notification-message');
     const notificationCloseBtn = document.getElementById('notification-close-btn');
 
-    /**
-     * Displays a custom notification modal.
-     * @param {string} type - 'success' or 'error'.
-     * @param {string} title - The title of the message.
-     * @param {string} message - The main message content.
-     */
     function showNotification(type, title, message) {
-        // Set content
         notificationTitle.textContent = title;
         notificationMessage.textContent = message;
-
-        // Set styles based on type
         if (type === 'success') {
             notificationIcon.innerHTML = `<i class="bi bi-check2-circle text-6xl text-green-600"></i>`;
             notificationIcon.className = 'w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5';
             notificationCloseBtn.className = 'bg-inec-green text-white font-semibold w-full py-3 rounded-lg';
-        } else { // error
+        } else {
             notificationIcon.innerHTML = `<i class="bi bi-x-circle text-6xl text-red-600"></i>`;
             notificationIcon.className = 'w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5';
             notificationCloseBtn.className = 'bg-inec-red text-white font-semibold w-full py-3 rounded-lg';
         }
         showModal(notificationModal);
     }
-
     notificationCloseBtn.addEventListener('click', () => hideModal(notificationModal));
-    // --- END: NEW NOTIFICATION MODAL LOGIC ---
 
-    // --- Dynamic Form Fields Logic (Unchanged) ---
+    // --- START: CORRECTED DYNAMIC FORM FIELDS LOGIC ---
     const roleSelect = document.getElementById('role');
     const clerkFields = document.getElementById('clerk-fields');
     const adminFields = document.getElementById('admin-fields');
+
     function toggleRoleFields() {
         const isClerk = roleSelect.value === 'clerk';
-        clerkFields.style.display = isClerk ? '' : 'none';
-        adminFields.style.display = isClerk ? 'none' : '';
+        
+        // This is the corrected logic.
+        // It uses classList.toggle() to add/remove the 'hidden' class,
+        // which works correctly with Tailwind CSS.
+        clerkFields.classList.toggle('hidden', !isClerk);
+        adminFields.classList.toggle('hidden', isClerk);
+
+        // Ensure the correct fields are required
         document.getElementById('polling_unit_id').required = isClerk;
     }
     roleSelect.addEventListener('change', toggleRoleFields);
+    // --- END: CORRECTED DYNAMIC FORM FIELDS LOGIC ---
 
 
     // --- Show "Add User" Modal ---
@@ -97,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleRoleFields();
                 showModal(userModal);
             } else {
-                // MODIFICATION: Use custom notification instead of alert()
                 showNotification('error', 'Fetch Error', data.message);
             }
         });
@@ -160,13 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (result.success) {
             hideModal(userModal);
-            // MODIFICATION: Use custom notification and only reload page on success
             showNotification('success', 'Success!', result.message);
             notificationCloseBtn.addEventListener('click', () => {
                 location.reload();
-            }, { once: true }); // Reload only after user clicks "OK"
+            }, { once: true });
         } else {
-            // MODIFICATION: Use custom notification for failure
             showNotification('error', 'Save Failed', result.message);
         }
     });
@@ -183,14 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 hideModal(deleteModal);
-                 // MODIFICATION: Use custom notification and only reload page on success
                 showNotification('success', 'Success!', result.message);
                 notificationCloseBtn.addEventListener('click', () => {
                     location.reload();
                 }, { once: true });
             } else {
-                 // MODIFICATION: Use custom notification for failure
-                hideModal(deleteModal); // Hide the delete confirmation first
+                hideModal(deleteModal);
                 showNotification('error', 'Delete Failed', result.message);
             }
         }

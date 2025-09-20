@@ -115,7 +115,7 @@ require_once '../includes/admin_header.php';
                 </select>
             </div>
             <div class="md:col-span-5 flex justify-end gap-2">
-                <a href="results.php" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Reset</a>
+                <a href="results-analysis.php" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Reset</a>
                 <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Filter</button>
             </div>
         </form>
@@ -221,7 +221,7 @@ require_once '../includes/admin_header.php';
     </div>
 </div>
 
-<form id="action-form" method="POST" action="results.php?<?php echo http_build_query($_GET); ?>" class="hidden">
+<form id="action-form" method="POST" action="results-analysis.php?<?php echo http_build_query($_GET); ?>" class="hidden">
     <input type="hidden" name="action" id="action-input"><input type="hidden" name="result_id" id="result-id-input">
 </form>
 

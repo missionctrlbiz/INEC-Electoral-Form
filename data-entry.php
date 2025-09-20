@@ -181,7 +181,9 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
             <form id="electionForm" method="POST" action="core/process_result.php" enctype="multipart/form-data" novalidate>
                 <!-- Hidden fields to pass essential IDs to the server -->
                 <input type="hidden" name="polling_unit_id" value="<?php echo htmlspecialchars($pollingUnitId); ?>">
-                
+                <!-- Hidden field to store the raw numerical total for form submission -->
+                <input type="hidden" id="total_valid_votes_raw" name="total_valid_votes">
+
                 <!-- Step 1: Location -->
                 <div class="form-step" data-step="1">
                     <h3 class="font-display text-2xl font-bold mb-6 text-slate-800">Step 1: Polling Unit Information</h3>
@@ -251,8 +253,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                         <?php endforeach; ?>
                     </tbody></table></div>
                     <div class="mt-6">
-                        <label for="total_valid_votes" class="block text-sm font-medium text-slate-700 mb-1">Total Valid Votes (Auto-calculated)</label>
-                        <input type="number" id="total_valid_votes" name="total_valid_votes" class="w-full p-3 bg-slate-100 border font-bold rounded-md" readonly>
+                        <label for="total_valid_votes_display" class="block text-sm font-medium text-slate-700 mb-1">Total Valid Votes (Auto-calculated)</label>
+                        <input type="text" id="total_valid_votes_display" class="w-full p-3 bg-slate-100 border font-bold rounded-md" readonly>
                     </div>
                     <div class="flex justify-between mt-8"><button type="button" class="back-btn bg-slate-200 text-slate-800 font-semibold py-3 px-6 rounded-md">Back</button><button type="button" class="next-btn bg-inec-green text-white font-semibold py-3 px-6 rounded-md">Next: Review &rarr;</button></div>
                 </div>
@@ -302,22 +304,18 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
         let currentStep = 0;
 
         // --- DYNAMIC LOCATION DROPDOWN LOGIC ---
-        // This section will fetch location data from a backend API endpoint.
         const stateSelect = document.getElementById('state');
         const lgaSelect = document.getElementById('lga');
         const wardSelect = document.getElementById('ward');
 
         async function fetchLocations(level, parentId) {
-            // NOTE: 'core/api_get_locations.php' needs to be created.
-            // It should accept 'level' (lga or ward) and 'id' (state_id or lga_id)
-            // and return a JSON array of objects with 'id' and 'name'.
             try {
                 const response = await fetch(`core/api_get_locations.php?level=${level}&id=${parentId}`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 return await response.json();
             } catch (error) {
                 console.error('Failed to fetch locations:', error);
-                return []; // Return empty array on error
+                return [];
             }
         }
 
@@ -325,7 +323,6 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
             lgaSelect.innerHTML = '<option value="" selected disabled>Loading...</option>';
             wardSelect.innerHTML = '<option value="" selected disabled>Select Ward...</option>';
             lgaSelect.disabled = true; wardSelect.disabled = true;
-
             if (this.value) {
                 const lgas = await fetchLocations('lga', this.value);
                 lgaSelect.innerHTML = '<option value="" selected disabled>Select LGA...</option>';
@@ -365,16 +362,10 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
             let isValid = true;
             const stepDiv = formSteps[stepIndex];
             const inputs = stepDiv.querySelectorAll('input[required], select[required]');
-
             inputs.forEach(input => {
                 clearError(input);
-                if (!input.value || (input.type === 'select-one' && input.value === "")) {
-                    isValid = false;
-                    showError(input, 'This field is required.');
-                } else if (input.type === 'number' && parseInt(input.value) < 0) {
-                     isValid = false;
-                    showError(input, 'Value cannot be negative.');
-                }
+                if (!input.value || (input.type === 'select-one' && input.value === "")) { isValid = false; showError(input, 'This field is required.'); } 
+                else if (input.type === 'number' && parseInt(input.value) < 0) { isValid = false; showError(input, 'Value cannot be negative.');}
             });
             return isValid;
         }
@@ -388,113 +379,43 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                 icon.classList.remove('bg-inec-green', 'text-white', 'border-inec-green', 'bg-green-100', 'border-green-500', 'text-green-600');
                 text.classList.remove('font-bold', 'text-inec-green');
 
-                if (index < currentStep) {
-                    icon.classList.add('bg-green-100', 'border-green-500', 'text-green-600');
-                    icon.innerHTML = '&#10003;'; // Checkmark
-                } else if (index === currentStep) {
-                    icon.classList.add('bg-inec-green', 'text-white', 'border-inec-green');
-                    text.classList.add('font-bold', 'text-inec-green');
-                    icon.innerHTML = index + 1;
-                } else {
-                    icon.innerHTML = index + 1;
-                }
+                if (index < currentStep) { icon.classList.add('bg-green-100', 'border-green-500', 'text-green-600'); icon.innerHTML = '&#10003;'; } 
+                else if (index === currentStep) { icon.classList.add('bg-inec-green', 'text-white', 'border-inec-green'); text.classList.add('font-bold', 'text-inec-green'); icon.innerHTML = index + 1; } 
+                else { icon.innerHTML = index + 1; }
             });
-            connectors.forEach((connector, index) => {
-                connector.classList.toggle('bg-inec-green', index < currentStep);
-            });
+            connectors.forEach((connector, index) => { connector.classList.toggle('bg-inec-green', index < currentStep); });
         };
 
         const populateReview = () => {
             const formData = new FormData(form);
-            const getSelectedText = (selectId) => {
-                const sel = document.getElementById(selectId);
-                return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : 'N/A';
-            };
-            
-            let partyScoresHtml = Array.from(form.querySelectorAll('.party-score-input')).map(input => `
-                <tr>
-                    <td class="py-1 font-medium text-slate-500">${input.dataset.partyName}</td>
-                    <td class="py-1 font-semibold text-slate-800 text-right">${parseInt(input.value || 0).toLocaleString()}</td>
-                </tr>
-            `).join('');
-
-            document.getElementById('review-section').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-                    <div>
-                        <h4 class="font-display text-lg font-bold mb-2">Polling Unit Information</h4>
-                        <dl class="text-sm space-y-2">
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">State</dt><dd class="font-semibold text-slate-800">${getSelectedText('state')}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">LGA</dt><dd class="font-semibold text-slate-800">${getSelectedText('lga')}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Ward</dt><dd class="font-semibold text-slate-800">${getSelectedText('ward')}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Polling Unit</dt><dd class="font-semibold text-slate-800">${formData.get('polling_unit_name') || 'N/A'}</dd></div>
-                        </dl>
-                    </div>
-                     <div>
-                        <h4 class="font-display text-lg font-bold mb-2">Voter & Ballot Statistics</h4>
-                        <dl class="text-sm space-y-2">
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Registered Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('registered_voters') || 0).toLocaleString()}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Accredited Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('accredited_voters') || 0).toLocaleString()}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Ballot Papers Issued</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('ballot_papers_issued') || 0).toLocaleString()}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Unused Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('unused_ballots') || 0).toLocaleString()}</dd></div>
-                            <div class="flex justify-between"><dt class="font-medium text-slate-500">Spoiled Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('spoiled_ballots') || 0).toLocaleString()}</dd></div>
-                             <div class="flex justify-between"><dt class="font-medium text-slate-500">Rejected Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('rejected_ballots') || 0).toLocaleString()}</dd></div>
-                        </dl>
-                    </div>
-                    <div class="md:col-span-2">
-                         <h4 class="font-display text-lg font-bold mb-2">Party Scores</h4>
-                         <table class="w-full text-sm">
-                             <tbody>${partyScoresHtml}</tbody>
-                             <tfoot class="border-t-2 border-slate-300">
-                                 <tr class="font-bold text-base">
-                                     <td class="pt-2">Total Valid Votes</td>
-                                     <td class="pt-2 text-right">${formData.get('total_valid_votes')}</td>
-                                 </tr>
-                             </tfoot>
-                         </table>
-                    </div>
-                </div>`;
+            const getSelectedText = (selectId) => { const sel = document.getElementById(selectId); return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : 'N/A'; };
+            let partyScoresHtml = Array.from(form.querySelectorAll('.party-score-input')).map(input => `<tr><td class="py-1 font-medium text-slate-500">${input.dataset.partyName}</td><td class="py-1 font-semibold text-slate-800 text-right">${parseInt(input.value || 0).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('review-section').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"><div><h4 class="font-display text-lg font-bold mb-2">Polling Unit Information</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">State</dt><dd class="font-semibold text-slate-800">${getSelectedText('state')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">LGA</dt><dd class="font-semibold text-slate-800">${getSelectedText('lga')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ward</dt><dd class="font-semibold text-slate-800">${getSelectedText('ward')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Polling Unit</dt><dd class="font-semibold text-slate-800">${formData.get('polling_unit_name') || 'N/A'}</dd></div></dl></div><div><h4 class="font-display text-lg font-bold mb-2">Voter & Ballot Statistics</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">Registered Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('registered_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Accredited Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('accredited_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ballot Papers Issued</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('ballot_papers_issued') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Unused Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('unused_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Spoiled Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('spoiled_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Rejected Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('rejected_ballots') || 0).toLocaleString()}</dd></div></dl></div><div class="md:col-span-2"><h4 class="font-display text-lg font-bold mb-2">Party Scores</h4><table class="w-full text-sm"><tbody>${partyScoresHtml}</tbody><tfoot class="border-t-2 border-slate-300"><tr class="font-bold text-base"><td class="pt-2">Total Valid Votes</td><td class="pt-2 text-right">${document.getElementById('total_valid_votes_display').value}</td></tr></tfoot></table></div></div>`;
         };
         
         form.addEventListener('click', (e) => {
-            if (e.target.matches('.next-btn') && currentStep < formSteps.length - 1) {
-                if (!validateStep(currentStep)) return;
-                if (currentStep === 2) { // Moving from Scores to Review
-                    populateReview(); 
-                }
-                currentStep++;
-                updateView();
-            } else if (e.target.matches('.back-btn') && currentStep > 0) {
-                currentStep--;
-                updateView();
-            }
+            if (e.target.matches('.next-btn') && currentStep < formSteps.length - 1) { if (!validateStep(currentStep)) return; if (currentStep === 2) { populateReview(); } currentStep++; updateView(); } 
+            else if (e.target.matches('.back-btn') && currentStep > 0) { currentStep--; updateView(); }
         });
         
         form.addEventListener('submit', function(e) {
-            // Final validation check before submitting
-            if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
-                e.preventDefault();
-                alert('Please fill out all required fields in all steps before submitting.');
-                return;
-            }
-             const fileInput = document.getElementById('result_sheet');
-             clearError(fileInput.closest('label'));
-             if (fileInput.files.length === 0) {
-                 e.preventDefault();
-                 showError(fileInput.closest('label'), 'Uploading the result sheet is mandatory.');
-                 return;
-             }
-             // Disable button to prevent multiple submissions
-             document.getElementById('submit-btn').disabled = true;
-             document.getElementById('submit-btn').textContent = 'Submitting...';
+            if (!validateStep(0) || !validateStep(1) || !validateStep(2)) { e.preventDefault(); alert('Please fill out all required fields in all steps before submitting.'); return; }
+             const fileInput = document.getElementById('result_sheet'); clearError(fileInput.closest('label')); if (fileInput.files.length === 0) { e.preventDefault(); showError(fileInput.closest('label'), 'Uploading the result sheet is mandatory.'); return; }
+             document.getElementById('submit-btn').disabled = true; document.getElementById('submit-btn').textContent = 'Submitting...';
         });
 
-        // --- SCORE CALCULATION LOGIC ---
+        // --- CORRECTED SCORE CALCULATION LOGIC ---
         const scoreInputs = form.querySelectorAll('.party-score-input');
-        const totalVotesField = form.querySelector('#total_valid_votes');
+        const totalVotesDisplayField = form.querySelector('#total_valid_votes_display');
+        const totalVotesRawField = form.querySelector('#total_valid_votes_raw');
+        
         const calculateTotalVotes = () => { 
             let total = 0; 
             scoreInputs.forEach(input => { total += parseInt(input.value) || 0; }); 
-            totalVotesField.value = total.toLocaleString(); 
+            // Set the raw, unformatted number to the hidden input for submission
+            totalVotesRawField.value = total;
+            // Set the formatted number (with commas) to the visible input for display
+            totalVotesDisplayField.value = total.toLocaleString(); 
         };
         scoreInputs.forEach(input => input.addEventListener('input', calculateTotalVotes));
         
@@ -502,24 +423,17 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
         const fileInput = document.getElementById('result_sheet');
         const fileDisplay = document.getElementById('file-name-display');
         const dropZone = fileInput.closest('label');
-
         fileInput.addEventListener('change', () => { 
             clearError(dropZone);
             if (fileInput.files.length > 0) {
                  const file = fileInput.files[0];
-                 const fileSize = file.size / 1024 / 1024; // in MB
-                 if (fileSize > 5) { // Max 5MB
-                     showError(dropZone, 'File is too large. Maximum size is 5MB.');
-                     fileInput.value = ''; // Clear the input
-                     return;
-                 }
+                 const fileSize = file.size / 1024 / 1024;
+                 if (fileSize > 5) { showError(dropZone, 'File is too large. Maximum size is 5MB.'); fileInput.value = ''; return; }
                  fileDisplay.textContent = `File selected: ${file.name}`;
-            } else {
-                 fileDisplay.textContent = '';
-            }
+            } else { fileDisplay.textContent = ''; }
         });
-        ['dragenter', 'dragover'].forEach(eventName => { dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-slate-200', 'border-inec-green'); }, false); });
-        ['dragleave', 'drop'].forEach(eventName => { dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-slate-200', 'border-inec-green'); }, false); });
+        ['dragenter', 'dragover'].forEach(eName => { dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-slate-200', 'border-inec-green'); }, false); });
+        ['dragleave', 'drop'].forEach(eName => { dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-slate-200', 'border-inec-green'); }, false); });
         dropZone.addEventListener('drop', (e) => { fileInput.files = e.dataTransfer.files; fileInput.dispatchEvent(new Event('change')); });
 
         // --- CANCEL MODAL LOGIC ---
@@ -527,21 +441,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
         const cancelModal = document.getElementById('cancel-modal');
         const modalContent = cancelModal.querySelector('div');
         const stayBtn = document.getElementById('stay-btn');
-        
-        cancelButton.addEventListener('click', () => {
-            cancelModal.classList.remove('hidden');
-            setTimeout(() => {
-                cancelModal.classList.remove('opacity-0');
-                modalContent.classList.remove('opacity-0', 'scale-95');
-            }, 10);
-        });
-
-        const hideCancelModal = () => {
-            cancelModal.classList.add('opacity-0');
-            modalContent.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => cancelModal.classList.add('hidden'), 300);
-        };
-
+        cancelButton.addEventListener('click', () => { cancelModal.classList.remove('hidden'); setTimeout(() => { cancelModal.classList.remove('opacity-0'); modalContent.classList.remove('opacity-0', 'scale-95'); }, 10); });
+        const hideCancelModal = () => { cancelModal.classList.add('opacity-0'); modalContent.classList.add('opacity-0', 'scale-95'); setTimeout(() => cancelModal.classList.add('hidden'), 300); };
         stayBtn.addEventListener('click', hideCancelModal);
         
         // Initial setup

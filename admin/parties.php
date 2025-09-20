@@ -12,7 +12,6 @@ require_once '../includes/admin_header.php';
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
             <h1 class="font-display text-3xl font-bold text-slate-900">Political Party Management</h1>
-            <p class="text-slate-600 mt-1">Add, edit, or remove political parties from the system.</p>
         </div>
         <button id="add-party-btn" class="bg-inec-green text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition mt-4 md:mt-0 shadow-sm">
             <i class="bi bi-plus-circle mr-2"></i> Add New Party

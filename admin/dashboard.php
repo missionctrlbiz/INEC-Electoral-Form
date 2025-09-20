@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // If there are still more results beyond the 10 we've shown, link to the full analysis page.
             if (hasMoreThanTen) {
                 newHtml = `
-                    <a href="national-summary.php" class="bg-inec-green text-white font-semibold py-2 px-5 rounded-lg hover:opacity-90 transition shadow-sm inline-block">
+                    <a href="results-analysis.php" class="bg-inec-green text-white font-semibold py-2 px-5 rounded-lg hover:opacity-90 transition shadow-sm inline-block">
                         View All Results Analysis
                     </a>`;
             } else {
