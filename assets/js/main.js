@@ -1,19 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENT SELECTION ---
     const loginForm = document.getElementById('login-form');
-    const verificationModal = document.getElementById('verification-modal');
-    const verificationForm = document.getElementById('verification-form');
-    const modalContent = verificationModal.querySelector('div');
-
     const loginBtn = document.getElementById('login-btn');
-    const verifyBtn = document.getElementById('verify-btn');
-    const cancelVerificationBtn = document.getElementById('cancel-verification-btn');
-
     const errorMessageDiv = document.getElementById('error-message');
-    const modalErrorMessageDiv = document.getElementById('modal-error-message');
-    const phoneDigitsInput = document.getElementById('phone_digits');
-    const phoneEndingSpan = document.querySelector('#verification-modal p strong'); // For displaying ****1234
-
 
     // --- HELPER FUNCTIONS ---
     const displayError = (element, message) => {
@@ -34,81 +23,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- MODAL VISIBILITY ---
-    const showVerificationModal = () => {
-        verificationModal.classList.remove('hidden');
-        setTimeout(() => {
-            verificationModal.classList.remove('opacity-0');
-            modalContent.classList.remove('opacity-0', 'scale-95');
-            phoneDigitsInput.focus();
-        }, 10);
-    };
-    const hideVerificationModal = () => {
-        verificationModal.classList.add('opacity-0');
-        modalContent.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-            verificationModal.classList.add('hidden');
-            phoneDigitsInput.value = '';
-            clearError(modalErrorMessageDiv);
-        }, 300);
-    };
+    // --- EVENT LISTENER FOR THE LOGIN FORM ---
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError(errorMessageDiv);
+            setButtonLoadingState(loginBtn, true, 'Sign In');
 
-    // --- EVENT LISTENERS ---
-    // STEP 1: Handle PU Code and PIN submission
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearError(errorMessageDiv);
-        setButtonLoadingState(loginBtn, true, 'Proceed to Verification');
+            const formData = new FormData(loginForm);
 
-        const formData = new FormData(loginForm);
-        formData.append('step', '1'); // Tell the backend this is step 1
+            try {
+                // Call the single, unified authentication script
+                const response = await fetch('core/auth_clerk.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
 
-        try {
-            const response = await fetch('core/auth_clerk.php', { method: 'POST', body: formData });
-            const data = await response.json();
-
-            if (data.success) {
-                // If step 1 is successful, show the modal
-                if (phoneEndingSpan && data.phone_ending) {
-                    phoneEndingSpan.textContent = `****${data.phone_ending}`;
+                if (data.success) {
+                    // --- SUCCESS: REDIRECT IMMEDIATELY ---
+                    loginBtn.innerHTML = 'Success! Redirecting...';
+                    window.location.href = 'data-entry.php';
+                } else {
+                    // Failure: Show the error message from the server
+                    displayError(errorMessageDiv, data.message || 'An unknown error occurred.');
+                    setButtonLoadingState(loginBtn, false, 'Sign In');
                 }
-                showVerificationModal();
-            } else {
-                displayError(errorMessageDiv, data.message || 'An unknown error occurred.');
+            } catch (error) {
+                console.error('Login Fetch Error:', error);
+                displayError(errorMessageDiv, 'A network error occurred. Please check your connection and try again.');
+                setButtonLoadingState(loginBtn, false, 'Sign In');
             }
-        } catch (error) {
-            displayError(errorMessageDiv, 'A network error occurred. Please check your connection and try again.');
-        } finally {
-            setButtonLoadingState(loginBtn, false, 'Proceed to Verification');
-        }
-    });
-
-    // STEP 2: Handle phone digit verification
-    verificationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearError(modalErrorMessageDiv);
-        setButtonLoadingState(verifyBtn, true, 'Verify & Sign In');
-
-        const formData = new FormData(verificationForm);
-        formData.append('step', '2'); // Tell the backend this is step 2
-
-        try {
-            const response = await fetch('core/auth_clerk.php', { method: 'POST', body: formData });
-            const data = await response.json();
-
-            if (data.success) {
-                // If step 2 is successful, redirect
-                verifyBtn.innerHTML = 'Success! Redirecting...';
-                window.location.href = 'data-entry.php';
-            } else {
-                displayError(modalErrorMessageDiv, data.message || 'Verification failed.');
-            }
-        } catch (error) {
-            displayError(modalErrorMessageDiv, 'A network error occurred. Please try again.');
-        } finally {
-            setButtonLoadingState(verifyBtn, false, 'Verify & Sign In');
-        }
-    });
-
-    cancelVerificationBtn.addEventListener('click', hideVerificationModal);
+        });
+    }
 });
