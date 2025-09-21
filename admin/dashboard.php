@@ -34,7 +34,26 @@ $recent_submissions_query = $conn->query("
 
 require_once '../includes/admin_header.php'; 
 ?>
-<main class="flex-1 p-6 bg-slate-100">
+<!-- START: ADDED STYLE BLOCK FOR MODAL REFINEMENT -->
+<style>
+    .modal-backdrop {
+        transition: opacity 300ms ease-in-out;
+    }
+    .modal-content {
+        transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+    }
+    .modal-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .modal-backdrop.open .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+</style>
+<!-- END: ADDED STYLE BLOCK -->
+
+<main id="main-content" class="flex-1 p-6 bg-slate-100">
     <header class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
         <div>
             <h1 class="font-display text-3xl font-bold text-slate-900">Dashboard</h1>
@@ -80,7 +99,11 @@ require_once '../includes/admin_header.php';
                             $hidden_class = ($i >= 5) ? 'hidden extra-row' : '';
                     ?>
                             <tr class="bg-white border-b hover:bg-slate-50 <?php echo $hidden_class; ?>">
-                                <td class="px-6 py-4 font-bold text-slate-800"><?php echo htmlspecialchars($row['pu_code']); ?></td>
+                                <td class="px-6 py-4 font-bold text-slate-800">
+                                    <a href="#" class="view-btn text-inec-green hover:underline" data-pu-name="<?php echo htmlspecialchars($row['pu_name']); ?>" data-location="<?php echo htmlspecialchars($row['ward_name'] . ', ' . $row['lga_name'] . ', ' . $row['state_name']); ?>" data-scores="<?php echo htmlspecialchars($row['scores'] ?? ''); ?>" data-image-path="../<?php echo htmlspecialchars($row['result_sheet_path']); ?>">
+                                        <?php echo htmlspecialchars($row['pu_code']); ?>
+                                    </a>
+                                </td>
                                 <td class="px-6 py-4"><?php echo htmlspecialchars($row['lga_name']); ?></td>
                                 <td class="px-6 py-4"><?php echo htmlspecialchars($row['state_name']); ?></td>
                                 <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Transmitted</span></td>
@@ -109,16 +132,28 @@ require_once '../includes/admin_header.php';
     </div>
 </main>
 
-<div id="view-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 opacity-0 hidden transition-opacity duration-300 pointer-events-none">
-    <div id="view-modal-content" class="bg-slate-50 rounded-xl shadow-2xl w-full max-w-4xl transform scale-95 transition-all duration-300 mx-4 max-h-[90vh] flex flex-col">
-        <header class="p-4 border-b bg-white rounded-t-xl flex justify-between items-center">
-            <div><h2 id="modal-title" class="font-display font-bold text-2xl text-slate-800"></h2><p id="modal-location" class="text-slate-500"></p></div>
+<!-- REFINED VIEW MODAL (LIGHTBOX) -->
+<div id="view-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 opacity-0 pointer-events-none">
+    <div id="view-modal-content" class="modal-content bg-slate-50 rounded-xl shadow-2xl w-full max-w-4xl transform scale-95 opacity-0 mx-4 max-h-[90vh] flex flex-col">
+        <header class="p-4 border-b bg-white rounded-t-xl flex justify-between items-center flex-shrink-0">
+            <div>
+                <h2 id="modal-title" class="font-display font-bold text-2xl text-slate-800"></h2>
+                <p id="modal-location" class="text-slate-500"></p>
+            </div>
             <button id="close-view-modal-btn" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
         </header>
         <div class="p-6 overflow-y-auto">
              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><h3 class="font-bold text-lg mb-2 text-slate-700">Submitted Scores</h3><div id="modal-scores" class="bg-white p-4 rounded-lg border text-sm font-mono"></div></div>
-                <div><h3 class="font-bold text-lg mb-2 text-slate-700">Scanned Result Sheet</h3><div class="border rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center min-h-[200px]"><img id="modal-image" src="" alt="Scanned Result Sheet" class="w-full h-auto object-contain max-h-[50vh]"></div></div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-slate-700">Submitted Scores</h3>
+                    <div id="modal-scores" class="bg-white p-4 rounded-lg border text-sm font-mono"></div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-slate-700">Scanned Result Sheet</h3>
+                    <div class="border rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center min-h-[200px]">
+                        <img id="modal-image" src="" alt="Scanned Result Sheet" class="w-full h-auto object-contain max-h-[50vh]">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -139,67 +174,83 @@ require_once '../includes/admin_header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.nav-link').forEach(link => { if (link.href.includes('dashboard.php')) link.classList.add('active'); else link.classList.remove('active'); });
-
+    // Chart rendering logic
     const chartsContainer = document.getElementById('charts-container');
     const barCanvas = document.getElementById('partyResultsChart');
     const doughnutCanvas = document.getElementById('voteShareChart');
     if (typeof Chart !== 'undefined' && barCanvas && doughnutCanvas) {
         try {
-            const partyData = JSON.parse(chartsContainer.dataset.chartData);
-            if (!partyData || partyData.length === 0) {
-                 barCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available.</p>';
-                 doughnutCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available.</p>';
-            } else {
+            const chartDataString = chartsContainer.dataset.chartData;
+            if (chartDataString && chartDataString.trim().startsWith('[')) {
+                const partyData = JSON.parse(chartDataString);
+                if (!partyData || partyData.length === 0 || partyData.reduce((sum, item) => sum + item.total_score, 0) === 0) throw new Error("No data");
                 const labels = partyData.map(d => d.acronym);
                 const scores = partyData.map(d => d.total_score);
-                new Chart(barCanvas.getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Total Votes', data: scores, backgroundColor: 'rgba(0, 106, 78, 0.7)', borderColor: 'rgba(0, 106, 78, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } } });
-                new Chart(doughnutCanvas.getContext('2d'), { type: 'doughnut', data: { labels: labels, datasets: [{ label: 'Vote Share', data: scores, backgroundColor: ['#006A4E', '#D40028', '#3B82F6', '#F59E0B', '#6D28D9'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
-            }
-        } catch (e) { console.error('Error initializing charts:', e); }
+                new Chart(barCanvas.getContext('2d'), { type: 'bar', data: { labels, datasets: [{ label: 'Total Votes', data: scores, backgroundColor: 'rgba(0, 106, 78, 0.7)', borderColor: 'rgba(0, 106, 78, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } } });
+                new Chart(doughnutCanvas.getContext('2d'), { type: 'doughnut', data: { labels, datasets: [{ label: 'Vote Share', data: scores, backgroundColor: ['#006A4E', '#D40028', '#3B82F6', '#F59E0B', '#6D28D9'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            } else { throw new Error("Invalid chart data"); }
+        } catch (e) {
+            console.error('Chart Error:', e.message);
+            barCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available.</p>';
+            doughnutCanvas.parentElement.innerHTML = '<p class="text-slate-500 text-center flex items-center justify-center h-full">No party score data available.</p>';
+        }
     }
-    
+
+    // "Show More" button logic
     const showMoreBtn = document.getElementById('show-more-btn');
     if (showMoreBtn) {
         const hasMoreThanTen = <?php echo ($total_fetched > 10) ? 'true' : 'false'; ?>;
         showMoreBtn.addEventListener('click', () => {
             document.querySelectorAll('.extra-row').forEach(row => row.classList.remove('hidden'));
-            const footerActionContainer = document.getElementById('table-footer-action');
-            footerActionContainer.innerHTML = hasMoreThanTen
-                ? `<a href="national-summary.php" class="bg-inec-green text-white font-semibold py-2 px-5 rounded-lg hover:opacity-90 transition shadow-sm inline-block">View All Results Analysis</a>`
-                : `<p class="text-sm text-slate-500">All recent submissions are now showing.</p>`;
+            const footer = document.getElementById('table-footer-action');
+            footer.innerHTML = hasMoreThanTen ? `<a href="national-summary.php" class="bg-inec-green text-white font-semibold py-2 px-5 rounded-lg hover:opacity-90 transition shadow-sm inline-block">View All Results Analysis</a>` : `<p class="text-sm text-slate-500">All recent submissions are now showing.</p>`;
         });
     }
 
+    // --- REFINED MODAL & BUTTON LOGIC ---
+    const mainContent = document.getElementById('main-content');
     const viewModal = document.getElementById('view-modal');
-    const viewModalContent = document.getElementById('view-modal-content');
-    const showModal = (modal, content) => { modal.classList.remove('hidden', 'pointer-events-none', 'opacity-0'); content.classList.remove('opacity-0', 'scale-95'); };
-    const hideModal = (modal, content) => { modal.classList.add('opacity-0', 'scale-95'); setTimeout(() => modal.classList.add('hidden', 'pointer-events-none'), 300); };
-    document.getElementById('close-view-modal-btn').addEventListener('click', () => hideModal(viewModal, viewModalContent));
-    viewModal.addEventListener('click', (e) => { if(e.target === viewModal) hideModal(viewModal, viewModalContent) });
-    document.querySelectorAll('.view-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            document.getElementById('modal-title').textContent = `${button.dataset.puName}`;
-            document.getElementById('modal-location').textContent = button.dataset.location;
-            document.getElementById('modal-image').src = button.dataset.imagePath;
-            const scoresHtml = '<ul class="space-y-1">' + (button.dataset.scores.length ? button.dataset.scores.split(', ').map(s => `<li class="flex justify-between items-center border-b pb-1"><span>${s.split(':')[0]}</span><span class="font-bold text-slate-800">${parseInt(s.split(':')[1]).toLocaleString()}</span></li>`).join('') : '<li>No scores recorded.</li>') + '</ul>';
-            document.getElementById('modal-scores').innerHTML = scoresHtml;
-            showModal(viewModal, viewModalContent);
-        });
-    });
-
-    const clearDataBtn = document.getElementById('clear-data-btn');
     const confirmClearModal = document.getElementById('confirm-clear-modal');
-    const cancelClearBtn = document.getElementById('cancel-clear-btn');
-    if (clearDataBtn) {
-        clearDataBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            confirmClearModal.classList.remove('hidden');
+
+    const showModal = (modal) => modal.classList.add('open');
+    const hideModal = (modal) => modal.classList.remove('open');
+    
+    // Close View Modal
+    document.getElementById('close-view-modal-btn').addEventListener('click', () => hideModal(viewModal));
+    viewModal.addEventListener('click', (e) => { if (e.target === viewModal) hideModal(viewModal) });
+    
+    // Event Delegation for all main content clicks
+    if (mainContent) {
+        mainContent.addEventListener('click', (e) => {
+            const viewButton = e.target.closest('.view-btn');
+            const clearButton = e.target.closest('#clear-data-btn');
+
+            if (viewButton) {
+                e.preventDefault();
+                document.getElementById('modal-title').textContent = viewButton.dataset.puName;
+                document.getElementById('modal-location').textContent = viewButton.dataset.location;
+                document.getElementById('modal-image').src = viewButton.dataset.imagePath;
+                const scores = viewButton.dataset.scores;
+                const scoresHtml = '<ul class="space-y-1">' + (scores && scores.length > 0 ? scores.split(', ').map(s => { const parts = s.split(':'); return `<li class="flex justify-between items-center border-b pb-1"><span>${parts[0] || 'N/A'}</span><span class="font-bold text-slate-800">${parseInt(parts[1] || 0).toLocaleString()}</span></li>`; }).join('') : '<li>No scores recorded.</li>') + '</ul>';
+                document.getElementById('modal-scores').innerHTML = scoresHtml;
+                showModal(viewModal);
+            }
+
+            if (clearButton) {
+                e.preventDefault();
+                confirmClearModal.classList.remove('hidden');
+            }
         });
+    }
+
+    // "Clear Data" Modal Cancel Button
+    const cancelClearBtn = document.getElementById('cancel-clear-btn');
+    if (cancelClearBtn) {
         cancelClearBtn.addEventListener('click', () => {
             confirmClearModal.classList.add('hidden');
         });
     }
 });
 </script>
+
 <?php require_once '../includes/admin_footer.php'; ?>

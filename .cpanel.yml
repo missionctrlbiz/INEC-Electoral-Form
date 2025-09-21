@@ -1,5 +1,0 @@
----
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home/kinzocle/inec.missionctrl.com.ng/
-    - /bin/cp -R * $DEPLOYPATH
