@@ -1,63 +1,23 @@
 <?php
-// STEP 1: Include the database connection.
-// This also starts the session and gives us access to our helper functions.
+// STEP 1: Include the database connection and helper functions.
 require_once 'core/db_connect.php';
 
-// STEP 2: Secure the page.
-// The require_login() function will check if a user_id exists in the session.
-// If not, it will automatically redirect the user to polling-unit-login.php and stop script execution.
+// STEP 2: Secure the page and ensure the user is a clerk.
 require_login();
-
-// We can also add another layer of security to ensure only clerks can access this page.
 if ($_SESSION['role'] !== 'clerk') {
-    // If an admin somehow gets here, destroy their session and send to the home page.
     session_destroy();
     header("Location: index.php");
     exit;
 }
 
-// STEP 3: Fetch all required data for the page in one go.
-// This is more efficient than multiple separate queries.
-$userId = $_SESSION['user_id'];
+// STEP 3: The pollingUnitId is now taken directly from the session.
+// The large query to fetch clerk display details is no longer needed.
 $pollingUnitId = $_SESSION['polling_unit_id'];
 
-// Prepare the main query to get user and location details
-$stmt = $conn->prepare(
-    "SELECT u.full_name, u.phone_number, pu.name AS pu_name, pu.pu_code, w.name AS ward_name, l.name AS lga_name, s.name AS state_name
-     FROM users u
-     JOIN polling_units pu ON u.polling_unit_id = pu.id
-     JOIN wards w ON pu.ward_id = w.id
-     JOIN lgas l ON w.lga_id = l.id
-     JOIN states s ON l.state_id = s.id
-     WHERE u.id = ?"
-);
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$result = $stmt->get_result();
-$clerkData = $result->fetch_assoc();
-
-if (!$clerkData) {
-    // If for some reason the clerk data doesn't exist, log out safely.
-    session_destroy();
-    header("Location: index.php");
-    exit;
-}
-$stmt->close();
-
-// Sanitize data for safe display
-$clerkName = htmlspecialchars($clerkData['full_name']);
-$clerkPhone = htmlspecialchars($clerkData['phone_number']);
-$puName = htmlspecialchars($clerkData['pu_name']);
-$puCode = htmlspecialchars($clerkData['pu_code']);
-$wardName = htmlspecialchars($clerkData['ward_name']);
-$lgaName = htmlspecialchars($clerkData['lga_name']);
-$stateName = htmlspecialchars($clerkData['state_name']);
-
-// Fetch all political parties to dynamically build the scoring form
+// Fetch data needed for form dropdowns and party list
 $parties_result = $conn->query("SELECT id, name, acronym, logo_path FROM political_parties ORDER BY acronym ASC");
 $political_parties = $parties_result->fetch_all(MYSQLI_ASSOC);
 
-// Fetch all states for the location dropdown
 $states_result = $conn->query("SELECT id, name FROM states ORDER BY name ASC");
 $states = $states_result->fetch_all(MYSQLI_ASSOC);
 ?>
@@ -74,7 +34,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
     <!-- Google Fonts: Syne (Headings) & Lexend (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;
+400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -101,16 +62,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
     }
     </script>
     <style>
-        /* Custom style for invalid form fields */
-        .form-input-error {
-            border-color: #D40028 !important;
-            box-shadow: 0 0 0 1px #D40028 !important;
-        }
-        .error-message {
-            color: #D40028;
-            font-size: 0.875rem; /* text-sm */
-            margin-top: 0.25rem; /* mt-1 */
-        }
+        .form-input-error { border-color: #D40028 !important; box-shadow: 0 0 0 1px #D40028 !important; }
+        .error-message { color: #D40028; font-size: 0.875rem; margin-top: 0.25rem; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-700">
@@ -130,23 +83,7 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
     <main class="container mx-auto my-12 px-4">
         <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-10 border border-slate-200">
             
-            <!-- User Details Display Section - DYNAMIC -->
-            <div class="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-6 mb-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                    <div>
-                        <p class="text-slate-500">Clerk</p>
-                        <p class="font-semibold text-slate-800 text-base"><?php echo $clerkName; ?> (<?php echo $clerkPhone; ?>)</p>
-                    </div>
-                     <div>
-                        <p class="text-slate-500">Polling Unit</p>
-                        <p class="font-semibold text-slate-800 text-base"><?php echo $puName; ?> (<?php echo $puCode; ?>)</p>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2">
-                         <p class="text-slate-500">Location</p>
-                        <p class="font-semibold text-slate-800 text-base"><?php echo $wardName; ?> | <?php echo $lgaName; ?> | <?php echo $stateName; ?></p>
-                    </div>
-                </div>
-            </div>
+            <!-- User Details Display Section has been removed as per client request -->
 
             <!-- Stepper -->
             <div class="flex items-start mb-10">
@@ -171,22 +108,20 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                 </div>
             </div>
             
-            <?php if (isset($_SESSION['error'])): ?>
+            <?php if (isset($_SESSION['error_message'])): ?>
                 <div class="bg-red-100 border-l-4 border-inec-red text-red-700 p-4 mb-6" role="alert">
                     <p class="font-bold">Error</p>
-                    <p><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></p>
+                    <p><?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?></p>
                 </div>
             <?php endif; ?>
 
             <form id="electionForm" method="POST" action="core/process_result.php" enctype="multipart/form-data" novalidate>
-                <!-- Hidden fields to pass essential IDs to the server -->
                 <input type="hidden" name="polling_unit_id" value="<?php echo htmlspecialchars($pollingUnitId); ?>">
-                <!-- Hidden field to store the raw numerical total for form submission -->
-                <input type="hidden" id="total_valid_votes_raw" name="total_valid_votes">
+                <input type="hidden" id="total_valid_votes_raw" name="total_valid_votes_raw">
 
                 <!-- Step 1: Location -->
                 <div class="form-step" data-step="1">
-                    <h3 class="font-display text-2xl font-bold mb-6 text-slate-800">Step 1: Polling Unit Information</h3>
+                    <h3 class="font-display text-2xl font-bold mb-6 text-slate-800">Step 1: Confirm Location</h3>
                     <div class="space-y-4">
                         <div>
                             <label for="state" class="block text-sm font-medium text-slate-700 mb-1">State</label>
@@ -209,10 +144,7 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                                 <option value="" selected disabled>Select Ward...</option>
                             </select>
                         </div>
-                        <div>
-                            <label for="polling_unit_name" class="block text-sm font-medium text-slate-700 mb-1">Polling Unit Name / Number</label>
-                            <input type="text" id="polling_unit_name" name="polling_unit_name" class="w-full p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-inec-green transition" placeholder="e.g., Town Hall 003" required>
-                        </div>
+                        <!-- Polling Unit Name input has been removed as per client request -->
                     </div>
                     <div class="flex justify-end mt-8"><button type="button" class="next-btn bg-inec-green text-white font-semibold py-3 px-6 rounded-md hover:opacity-90 transition shadow">Next: Statistics &rarr;</button></div>
                 </div>
@@ -237,18 +169,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                     <div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200"><thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Party</th><th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase w-48">Score</th></tr></thead><tbody class="bg-white divide-y divide-slate-200">
                         <?php foreach ($political_parties as $party): ?>
                         <tr>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <img src="<?php echo htmlspecialchars($party['logo_path'] ?? 'assets/images/INEC-Logo.png'); ?>" class="h-10 w-10 object-contain">
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-slate-900"><?php echo htmlspecialchars($party['name']); ?></div>
-                                        <div class="text-sm text-slate-500"><?php echo htmlspecialchars($party['acronym']); ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <input type="number" name="party_scores[<?php echo htmlspecialchars($party['id']); ?>]" min="0" class="party-score-input w-full p-2 border border-slate-300 rounded-md" value="0" required data-party-name="<?php echo htmlspecialchars($party['acronym']); ?>">
-                            </td>
+                            <td class="px-6 py-4"><div class="flex items-center"><img src="<?php echo htmlspecialchars($party['logo_path'] ?? 'assets/images/INEC-Logo.png'); ?>" class="h-10 w-10 object-contain"><div class="ml-4"><div class="text-sm font-medium text-slate-900"><?php echo htmlspecialchars($party['name']); ?></div><div class="text-sm text-slate-500"><?php echo htmlspecialchars($party['acronym']); ?></div></div></div></td>
+                            <td class="px-6 py-4"><input type="number" name="party_scores[<?php echo htmlspecialchars($party['id']); ?>]" min="0" class="party-score-input w-full p-2 border border-slate-300 rounded-md" value="0" required data-party-name="<?php echo htmlspecialchars($party['acronym']); ?>"></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody></table></div>
@@ -262,13 +184,12 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                 <!-- Step 4: Review -->
                 <div class="form-step hidden" data-step="4">
                     <h3 class="font-display text-2xl font-bold mb-6 text-slate-800">Step 4: Review and Submit</h3>
-                    <div id="review-section" class="space-y-6 bg-slate-50 p-6 rounded-lg border">
-                        <!-- Review content will be populated by JavaScript -->
-                    </div>
+                    <div id="review-section" class="space-y-6 bg-slate-50 p-6 rounded-lg border"></div>
                     <div class="mt-6">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Upload Scanned Result Sheet (Image files only)</label>
-                        <label for="result_sheet" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6"><i class="bi bi-cloud-upload-fill text-4xl text-slate-400"></i><p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Click to upload</span> or drag and drop</p></div>
+                        <label for="result_sheet" class="flex flex-col items-center justify-center w-full min-h-[8rem] border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
+                            <div id="upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6"><i class="bi bi-cloud-upload-fill text-4xl text-slate-400"></i><p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Click to upload</span> or drag and drop</p></div>
+                            <img id="image-preview" src="#" alt="Image Preview" class="hidden max-h-48 rounded-lg p-2"/>
                             <input id="result_sheet" name="result_sheet" type="file" class="hidden" required accept="image/png, image/jpeg, image/webp">
                         </label>
                         <p id="file-name-display" class="mt-2 text-sm text-slate-600 font-medium"></p>
@@ -300,10 +221,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
         const form = document.getElementById('electionForm');
         const formSteps = Array.from(form.querySelectorAll('.form-step'));
         const stepperItems = Array.from(document.querySelectorAll('.step'));
-        const connectors = Array.from(document.querySelectorAll('.connector'));
         let currentStep = 0;
 
-        // --- DYNAMIC LOCATION DROPDOWN LOGIC ---
         const stateSelect = document.getElementById('state');
         const lgaSelect = document.getElementById('lga');
         const wardSelect = document.getElementById('ward');
@@ -313,12 +232,8 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                 const response = await fetch(`core/api_get_locations.php?level=${level}&id=${parentId}`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 return await response.json();
-            } catch (error) {
-                console.error('Failed to fetch locations:', error);
-                return [];
-            }
+            } catch (error) { console.error('Failed to fetch locations:', error); return []; }
         }
-
         stateSelect.addEventListener('change', async function() {
             lgaSelect.innerHTML = '<option value="" selected disabled>Loading...</option>';
             wardSelect.innerHTML = '<option value="" selected disabled>Select Ward...</option>';
@@ -330,7 +245,6 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                 lgaSelect.disabled = false;
             }
         });
-
         lgaSelect.addEventListener('change', async function() {
             wardSelect.innerHTML = '<option value="" selected disabled>Loading...</option>';
             wardSelect.disabled = true;
@@ -342,43 +256,17 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
             }
         });
 
-        // --- FORM VALIDATION LOGIC ---
-        function clearError(input) {
-            input.classList.remove('form-input-error');
-            const errorMsg = input.parentElement.querySelector('.error-message');
-            if (errorMsg) errorMsg.remove();
-        }
-
-        function showError(input, message) {
-            clearError(input);
-            input.classList.add('form-input-error');
-            const error = document.createElement('p');
-            error.className = 'error-message';
-            error.textContent = message;
-            input.parentElement.appendChild(error);
-        }
-
-        function validateStep(stepIndex) {
-            let isValid = true;
-            const stepDiv = formSteps[stepIndex];
-            const inputs = stepDiv.querySelectorAll('input[required], select[required]');
-            inputs.forEach(input => {
-                clearError(input);
-                if (!input.value || (input.type === 'select-one' && input.value === "")) { isValid = false; showError(input, 'This field is required.'); } 
-                else if (input.type === 'number' && parseInt(input.value) < 0) { isValid = false; showError(input, 'Value cannot be negative.');}
-            });
-            return isValid;
-        }
-
-        // --- MULTI-STEP FORM NAVIGATION ---
+        function clearError(input) { input.classList.remove('form-input-error'); const e = input.parentElement.querySelector('.error-message'); if (e) e.remove(); }
+        function showError(input, message) { clearError(input); input.classList.add('form-input-error'); const e = document.createElement('p'); e.className = 'error-message'; e.textContent = message; input.parentElement.appendChild(e); }
+        function validateStep(stepIndex) { let isValid = true; const stepDiv = formSteps[stepIndex]; const inputs = stepDiv.querySelectorAll('input[required], select[required]'); inputs.forEach(input => { clearError(input); if (!input.value || (input.type === 'select-one' && input.value === "")) { isValid = false; showError(input, 'This field is required.'); } else if (input.type === 'number' && parseInt(input.value) < 0) { isValid = false; showError(input, 'Value cannot be negative.'); } }); return isValid; }
+        
         const updateView = () => {
             formSteps.forEach((step, index) => step.classList.toggle('hidden', index !== currentStep));
+            const connectors = document.querySelectorAll('.connector');
             stepperItems.forEach((step, index) => {
-                const icon = step.querySelector('.step-icon');
-                const text = step.querySelector('p');
+                const icon = step.querySelector('.step-icon'); const text = step.querySelector('p');
                 icon.classList.remove('bg-inec-green', 'text-white', 'border-inec-green', 'bg-green-100', 'border-green-500', 'text-green-600');
                 text.classList.remove('font-bold', 'text-inec-green');
-
                 if (index < currentStep) { icon.classList.add('bg-green-100', 'border-green-500', 'text-green-600'); icon.innerHTML = '&#10003;'; } 
                 else if (index === currentStep) { icon.classList.add('bg-inec-green', 'text-white', 'border-inec-green'); text.classList.add('font-bold', 'text-inec-green'); icon.innerHTML = index + 1; } 
                 else { icon.innerHTML = index + 1; }
@@ -390,7 +278,7 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
             const formData = new FormData(form);
             const getSelectedText = (selectId) => { const sel = document.getElementById(selectId); return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : 'N/A'; };
             let partyScoresHtml = Array.from(form.querySelectorAll('.party-score-input')).map(input => `<tr><td class="py-1 font-medium text-slate-500">${input.dataset.partyName}</td><td class="py-1 font-semibold text-slate-800 text-right">${parseInt(input.value || 0).toLocaleString()}</td></tr>`).join('');
-            document.getElementById('review-section').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"><div><h4 class="font-display text-lg font-bold mb-2">Polling Unit Information</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">State</dt><dd class="font-semibold text-slate-800">${getSelectedText('state')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">LGA</dt><dd class="font-semibold text-slate-800">${getSelectedText('lga')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ward</dt><dd class="font-semibold text-slate-800">${getSelectedText('ward')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Polling Unit</dt><dd class="font-semibold text-slate-800">${formData.get('polling_unit_name') || 'N/A'}</dd></div></dl></div><div><h4 class="font-display text-lg font-bold mb-2">Voter & Ballot Statistics</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">Registered Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('registered_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Accredited Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('accredited_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ballot Papers Issued</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('ballot_papers_issued') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Unused Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('unused_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Spoiled Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('spoiled_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Rejected Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('rejected_ballots') || 0).toLocaleString()}</dd></div></dl></div><div class="md:col-span-2"><h4 class="font-display text-lg font-bold mb-2">Party Scores</h4><table class="w-full text-sm"><tbody>${partyScoresHtml}</tbody><tfoot class="border-t-2 border-slate-300"><tr class="font-bold text-base"><td class="pt-2">Total Valid Votes</td><td class="pt-2 text-right">${document.getElementById('total_valid_votes_display').value}</td></tr></tfoot></table></div></div>`;
+            document.getElementById('review-section').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"><div><h4 class="font-display text-lg font-bold mb-2">Location Information</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">State</dt><dd class="font-semibold text-slate-800">${getSelectedText('state')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">LGA</dt><dd class="font-semibold text-slate-800">${getSelectedText('lga')}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ward</dt><dd class="font-semibold text-slate-800">${getSelectedText('ward')}</dd></div></dl></div><div><h4 class="font-display text-lg font-bold mb-2">Voter & Ballot Statistics</h4><dl class="text-sm space-y-2"><div class="flex justify-between"><dt class="font-medium text-slate-500">Registered Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('registered_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Accredited Voters</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('accredited_voters') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Ballot Papers Issued</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('ballot_papers_issued') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Unused Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('unused_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Spoiled Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('spoiled_ballots') || 0).toLocaleString()}</dd></div><div class="flex justify-between"><dt class="font-medium text-slate-500">Rejected Ballots</dt><dd class="font-semibold text-slate-800">${parseInt(formData.get('rejected_ballots') || 0).toLocaleString()}</dd></div></dl></div><div class="md:col-span-2"><h4 class="font-display text-lg font-bold mb-2">Party Scores</h4><table class="w-full text-sm"><tbody>${partyScoresHtml}</tbody><tfoot class="border-t-2 border-slate-300"><tr class="font-bold text-base"><td class="pt-2">Total Valid Votes</td><td class="pt-2 text-right">${document.getElementById('total_valid_votes_display').value}</td></tr></tfoot></table></div></div>`;
         };
         
         form.addEventListener('click', (e) => {
@@ -404,25 +292,23 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
              document.getElementById('submit-btn').disabled = true; document.getElementById('submit-btn').textContent = 'Submitting...';
         });
 
-        // --- CORRECTED SCORE CALCULATION LOGIC ---
         const scoreInputs = form.querySelectorAll('.party-score-input');
         const totalVotesDisplayField = form.querySelector('#total_valid_votes_display');
         const totalVotesRawField = form.querySelector('#total_valid_votes_raw');
-        
         const calculateTotalVotes = () => { 
             let total = 0; 
             scoreInputs.forEach(input => { total += parseInt(input.value) || 0; }); 
-            // Set the raw, unformatted number to the hidden input for submission
             totalVotesRawField.value = total;
-            // Set the formatted number (with commas) to the visible input for display
             totalVotesDisplayField.value = total.toLocaleString(); 
         };
         scoreInputs.forEach(input => input.addEventListener('input', calculateTotalVotes));
         
-        // --- ENHANCED FILE UPLOAD LOGIC ---
         const fileInput = document.getElementById('result_sheet');
         const fileDisplay = document.getElementById('file-name-display');
         const dropZone = fileInput.closest('label');
+        const imagePreview = document.getElementById('image-preview');
+        const uploadPrompt = document.getElementById('upload-prompt');
+
         fileInput.addEventListener('change', () => { 
             clearError(dropZone);
             if (fileInput.files.length > 0) {
@@ -430,22 +316,42 @@ $states = $states_result->fetch_all(MYSQLI_ASSOC);
                  const fileSize = file.size / 1024 / 1024;
                  if (fileSize > 5) { showError(dropZone, 'File is too large. Maximum size is 5MB.'); fileInput.value = ''; return; }
                  fileDisplay.textContent = `File selected: ${file.name}`;
-            } else { fileDisplay.textContent = ''; }
+                 
+                 // Show image preview
+                 const reader = new FileReader();
+                 reader.onload = function(e) {
+                     imagePreview.src = e.target.result;
+                     imagePreview.classList.remove('hidden');
+                     uploadPrompt.classList.add('hidden');
+                 }
+                 reader.readAsDataURL(file);
+            } else { 
+                fileDisplay.textContent = '';
+                imagePreview.classList.add('hidden');
+                uploadPrompt.classList.remove('hidden');
+            }
         });
         ['dragenter', 'dragover'].forEach(eName => { dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-slate-200', 'border-inec-green'); }, false); });
         ['dragleave', 'drop'].forEach(eName => { dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-slate-200', 'border-inec-green'); }, false); });
         dropZone.addEventListener('drop', (e) => { fileInput.files = e.dataTransfer.files; fileInput.dispatchEvent(new Event('change')); });
 
-        // --- CANCEL MODAL LOGIC ---
         const cancelButton = document.getElementById('cancel-button');
         const cancelModal = document.getElementById('cancel-modal');
-        const modalContent = cancelModal.querySelector('div');
         const stayBtn = document.getElementById('stay-btn');
-        cancelButton.addEventListener('click', () => { cancelModal.classList.remove('hidden'); setTimeout(() => { cancelModal.classList.remove('opacity-0'); modalContent.classList.remove('opacity-0', 'scale-95'); }, 10); });
-        const hideCancelModal = () => { cancelModal.classList.add('opacity-0'); modalContent.classList.add('opacity-0', 'scale-95'); setTimeout(() => cancelModal.classList.add('hidden'), 300); };
+        cancelButton.addEventListener('click', () => {
+            cancelModal.classList.remove('hidden');
+            setTimeout(() => {
+                cancelModal.classList.remove('opacity-0');
+                cancelModal.querySelector('div').classList.remove('opacity-0', 'scale-95');
+            }, 10);
+        });
+        const hideCancelModal = () => {
+            cancelModal.classList.add('opacity-0');
+            cancelModal.querySelector('div').classList.add('opacity-0', 'scale-95');
+            setTimeout(() => cancelModal.classList.add('hidden'), 300);
+        };
         stayBtn.addEventListener('click', hideCancelModal);
         
-        // Initial setup
         calculateTotalVotes();
         updateView();
     });
